@@ -1129,9 +1129,113 @@ body{
   border-color:var(--push);
   color:var(--push);
 }
+
+/* ── AUTH OVERLAY ── */
+#authOverlay{
+  position:fixed;inset:0;background:var(--bg);z-index:1000;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.auth-card{
+  width:100%;max-width:380px;background:var(--panel);
+  border:1px solid var(--border);border-radius:16px;padding:32px 24px;
+}
+.auth-logo{
+  font-family:'Bebas Neue',sans-serif;font-size:36px;
+  color:var(--white);letter-spacing:2px;margin-bottom:2px;
+}
+.auth-logo span{color:var(--accent);}
+.auth-tagline{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--muted);letter-spacing:2px;margin-bottom:28px;
+}
+.auth-tabs{display:flex;gap:8px;margin-bottom:20px;}
+.auth-tab{
+  flex:1;padding:8px;background:none;border:1px solid var(--border2);
+  border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.auth-tab.active{border-color:var(--accent);color:var(--accent);}
+.auth-input{
+  display:block;width:100%;background:var(--panel2);
+  border:1px solid var(--border);border-radius:8px;padding:12px 14px;
+  font-family:'DM Mono',monospace;font-size:13px;color:var(--white);
+  outline:none;margin-bottom:12px;transition:border-color .2s;
+}
+.auth-input:focus{border-color:var(--border2);}
+.auth-btn-primary{
+  width:100%;padding:13px;background:var(--accent);border:none;
+  border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;
+  color:#000;cursor:pointer;margin-bottom:16px;transition:opacity .2s;
+}
+.auth-btn-primary:hover{opacity:.85;}
+.auth-btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.auth-divider{text-align:center;position:relative;margin-bottom:16px;}
+.auth-divider::before{
+  content:'';position:absolute;top:50%;left:0;right:0;
+  height:1px;background:var(--border);
+}
+.auth-divider span{
+  position:relative;background:var(--panel);padding:0 10px;
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
+}
+.auth-btn-google{
+  width:100%;padding:12px;background:var(--panel2);
+  border:1px solid var(--border2);border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--white);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:10px;transition:border-color .2s;
+}
+.auth-btn-google:hover{border-color:var(--white);}
+.auth-error{
+  background:rgba(255,78,58,.1);border:1px solid rgba(255,78,58,.3);
+  border-radius:8px;padding:10px 12px;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--push);
+  margin-bottom:16px;
+}
+.auth-info{
+  background:rgba(58,184,255,.08);border:1px solid rgba(58,184,255,.25);
+  border-radius:8px;padding:10px 12px;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--pull);
+  margin-bottom:16px;
+}
+.auth-signout{
+  background:none;border:none;font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--muted);cursor:pointer;text-decoration:underline;
+  margin-left:6px;padding:0;
+}
+.auth-signout:hover{color:var(--white);}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- Auth overlay — shown until user is signed in -->
+<div id="authOverlay" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">PPL<span>·</span>SPLIT</div>
+    <div class="auth-tagline">TRAINING TRACKER</div>
+    <div id="authMsg" style="display:none"></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="setAuthMode('signin')">SIGN IN</button>
+      <button class="auth-tab" onclick="setAuthMode('signup')">SIGN UP</button>
+    </div>
+    <input type="email" id="authEmail" class="auth-input" placeholder="Email" autocomplete="email">
+    <input type="password" id="authPass" class="auth-input" placeholder="Password" autocomplete="current-password">
+    <button class="auth-btn-primary" id="authSubmitBtn" onclick="doEmailAuth()">
+      <span id="authBtnLabel">SIGN IN</span>
+    </button>
+    <div class="auth-divider"><span>OR</span></div>
+    <button class="auth-btn-google" onclick="doGoogleAuth()">
+      <svg width="18" height="18" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Continue with Google
+    </button>
+  </div>
+</div>
 
 <div class="hdr">
   <div class="hdr-top">
@@ -1157,35 +1261,127 @@ body{
 <div class="main" id="histContent" style="display:none;"></div>
 
 <script>
-/* ── MULTI-USER: resolve username from ?user=name in URL ── */
-const URL_USER = (new URLSearchParams(window.location.search).get('user') || 'default')
-  .toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,32) || 'default';
-
-// Storage key is per-user so each person has fully isolated data
-const STORAGE_KEY = URL_USER === 'default' ? 'ppl_v4' : `ppl_v4_${URL_USER}`;
+/* ── SUPABASE ── */
+const SUPABASE_URL = 'https://ukylutrjetyrabqlntsc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVreWx1dHJqZXR5cmFicWxudHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Mjk1MzAsImV4cCI6MjA4OTMwNTUzMH0.CCbZ0gJw07n0aAmU9Od1BJEwluz81aA4hDhzdAcJGfY';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let _currentUser = null;
 
 /* ── DATA HELPERS ── */
 function getToday(){ return new Date().toISOString().slice(0,10); }
 
-function loadData(){
+async function loadDataFromCloud(){
+  // Try Supabase first
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return JSON.parse(raw);
+    const { data } = await _sb.from('workout_data').select('data').eq('user_id', _currentUser.id).single();
+    if(data?.data){
+      appData = data.data;
+      try{ localStorage.setItem('ppl_v4_cache_'+_currentUser.id, JSON.stringify(appData)); }catch(e){}
+      return;
+    }
   }catch(e){}
-  // Migrate from ppl_v3 / ppl_v4 default only for the default user
-  if(URL_USER === 'default'){
-    let checked = {};
-    try{ checked = JSON.parse(localStorage.getItem('ppl_v3')||'{}'); }catch(e){}
-    return { checked, sessions:{} };
-  }
-  return { checked:{}, sessions:{} };
+  // Fall back to local cache for this user
+  try{
+    const raw = localStorage.getItem('ppl_v4_cache_'+_currentUser.id);
+    if(raw){ appData = JSON.parse(raw); return; }
+  }catch(e){}
+  appData = { checked:{}, sessions:{} };
 }
 
+let _saveTimer = null;
 function saveData(data){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+  appData = data;
+  // Write to local cache immediately (offline support)
+  try{ localStorage.setItem('ppl_v4_cache_'+(_currentUser?.id||'guest'), JSON.stringify(data)); }catch(e){}
+  // Debounce cloud write by 1.5s
+  if(!_currentUser) return;
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(()=>{
+    _sb.from('workout_data').upsert(
+      { user_id:_currentUser.id, data, updated_at:new Date().toISOString() },
+      { onConflict:'user_id' }
+    );
+  }, 1500);
 }
 
-let appData = loadData();
+let appData = { checked:{}, sessions:{} };
+
+/* ── AUTH ── */
+let _authMode = 'signin';
+
+function showAuthOverlay(){ document.getElementById('authOverlay').style.display='flex'; }
+function hideAuthOverlay(){ document.getElementById('authOverlay').style.display='none'; }
+
+function setAuthMode(mode){
+  _authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>{
+    t.classList.toggle('active', (mode==='signin'&&i===0)||(mode==='signup'&&i===1));
+  });
+  document.getElementById('authBtnLabel').textContent = mode==='signin' ? 'SIGN IN' : 'CREATE ACCOUNT';
+  setAuthMsg('');
+}
+
+function setAuthMsg(msg, isInfo){
+  const el = document.getElementById('authMsg');
+  el.textContent = msg;
+  el.className = isInfo ? 'auth-info' : 'auth-error';
+  el.style.display = msg ? '' : 'none';
+}
+
+async function doEmailAuth(){
+  const email = document.getElementById('authEmail').value.trim();
+  const pass  = document.getElementById('authPass').value;
+  const btn   = document.getElementById('authSubmitBtn');
+  if(!email||!pass){ setAuthMsg('Please enter your email and password.'); return; }
+  btn.disabled = true;
+  const { error } = _authMode==='signin'
+    ? await _sb.auth.signInWithPassword({ email, password:pass })
+    : await _sb.auth.signUp({ email, password:pass });
+  btn.disabled = false;
+  if(error) setAuthMsg(error.message);
+  else if(_authMode==='signup') setAuthMsg('Check your email to confirm your account.', true);
+}
+
+async function doGoogleAuth(){
+  await _sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href } });
+}
+
+async function doSignOut(){
+  await _sb.auth.signOut();
+}
+
+async function onSignedIn(user){
+  _currentUser = user;
+  hideAuthOverlay();
+  await loadDataFromCloud();
+  renderTabs(); renderDay(); updateProg();
+  const el = document.getElementById('hdrUser');
+  const name = user.user_metadata?.full_name || user.email || 'User';
+  el.innerHTML = name + `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
+  el.classList.add('visible');
+}
+
+function onSignedOut(){
+  _currentUser = null;
+  appData = { checked:{}, sessions:{} };
+  showAuthOverlay();
+  const el = document.getElementById('hdrUser');
+  el.innerHTML = '';
+  el.classList.remove('visible');
+}
+
+/* ── INIT ── */
+(async function init(){
+  // Listen for auth state changes (handles OAuth redirect callback too)
+  _sb.auth.onAuthStateChange(async (event, session)=>{
+    if(event==='SIGNED_IN' && session?.user) await onSignedIn(session.user);
+    else if(event==='SIGNED_OUT') onSignedOut();
+  });
+  // Check for existing session on load
+  const { data:{ session } } = await _sb.auth.getSession();
+  if(session?.user) await onSignedIn(session.user);
+  else showAuthOverlay();
+})();
 
 function getLastSession(dayId, exIndex){
   const today = getToday();
@@ -1813,13 +2009,7 @@ function resetDay(id){
   renderDay(); renderTabs(); updateProg();
 }
 
-// Show username badge if not default
-if(URL_USER !== 'default'){
-  const badge = document.getElementById('hdrUser');
-  if(badge){ badge.textContent = '▸ ' + URL_USER; badge.classList.add('visible'); }
-}
-
-renderTabs(); renderDay(); updateProg();
+// Render is triggered by onSignedIn() after auth + data load
 </script>
 
 <!-- ── PWA: Service Worker registration ───────────────────────────────────── -->
