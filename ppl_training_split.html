@@ -1247,7 +1247,7 @@ function completeDay(dayId){
 
 const DAYS = [
   {
-    id:0, label:"D1", name:"PUSH A", type:"push", col:"var(--push)",
+    id:0, label:"MON", name:"PUSH A", type:"push", col:"var(--push)",
     focus:"Chest Primary · Shoulders · Triceps",
     exercises:[
       {name:"Machine Chest Press",sets:"4",reps:"12–15",note:"Flat or incline — full ROM, 3s eccentric"},
@@ -1267,7 +1267,7 @@ const DAYS = [
     ]
   },
   {
-    id:1, label:"D2", name:"PULL A", type:"pull", col:"var(--pull)",
+    id:1, label:"TUE", name:"PULL A", type:"pull", col:"var(--pull)",
     focus:"Back Primary · Rear Delts · Biceps",
     exercises:[
       {name:"Machine Lat Pulldown (Wide)",sets:"4",reps:"12–15",note:"Full stretch at top, drive elbows to hips"},
@@ -1287,7 +1287,7 @@ const DAYS = [
     ]
   },
   {
-    id:2, label:"D3", name:"LEGS A", type:"legs", col:"var(--legs)",
+    id:2, label:"WED", name:"LEGS A", type:"legs", col:"var(--legs)",
     focus:"Quad Dominant · Glutes · Calves",
     exercises:[
       {name:"Machine Leg Press",sets:"4",reps:"15–20",note:"Shoulder-width, full depth, 3s down"},
@@ -1307,7 +1307,7 @@ const DAYS = [
     ]
   },
   {
-    id:3, label:"D4", name:"PUSH B", type:"push", col:"var(--push)",
+    id:3, label:"THU", name:"PUSH B", type:"push", col:"var(--push)",
     focus:"Shoulder Primary · Chest Accessory · Triceps",
     exercises:[
       {name:"Machine Overhead Press (Plate-Loaded)",sets:"4",reps:"12–15",note:"Full lockout, controlled 3s descent"},
@@ -1327,7 +1327,7 @@ const DAYS = [
     ]
   },
   {
-    id:4, label:"D5", name:"PULL B", type:"pull", col:"var(--pull)",
+    id:4, label:"FRI", name:"PULL B", type:"pull", col:"var(--pull)",
     focus:"Lats & Thickness · Rear Delts · Bicep Detail",
     exercises:[
       {name:"Machine Lat Pulldown (Neutral Grip)",sets:"4",reps:"12–15",note:"Elbows to hips — full stretch held"},
@@ -1347,7 +1347,7 @@ const DAYS = [
     ]
   },
   {
-    id:5, label:"D6", name:"LEGS B", type:"legs", col:"var(--legs)",
+    id:5, label:"SAT", name:"LEGS B", type:"legs", col:"var(--legs)",
     focus:"Hamstring & Glute Dominant · Adductors",
     exercises:[
       {name:"Machine Romanian Deadlift (Low Cable)",sets:"4",reps:"12–15",note:"Hip hinge — load hamstrings fully"},
@@ -1368,7 +1368,9 @@ const DAYS = [
   }
 ];
 
-let activeDay = 0;
+// Map JS getDay() (0=Sun … 6=Sat) → DAYS index (Mon=0 … Sat=5, Sun falls back to Mon)
+const _dowMap = [0, 0, 1, 2, 3, 4, 5]; // Sun→Mon, Mon→D1, Tue→D2 … Sat→D6
+let activeDay = _dowMap[new Date().getDay()];
 
 function toggle(key){
   appData.checked[key] = !appData.checked[key];
