@@ -2093,7 +2093,7 @@ if ('serviceWorker' in navigator) {
 
   const banner = document.createElement('div');
   banner.className = 'ios-install-banner';
-  banner.innerHTML = \`
+  banner.innerHTML = `
     <span class="ios-install-icon">📲</span>
     <span class="ios-install-text">
       <strong>Install as App</strong>
@@ -2101,7 +2101,7 @@ if ('serviceWorker' in navigator) {
       <strong style="color:var(--pull)">Add to Home Screen</strong> for the full experience — offline &amp; full-screen.
     </span>
     <button class="ios-install-close" onclick="this.closest('.ios-install-banner').remove(); localStorage.setItem('ppl_install_dismissed','1')">×</button>
-  \`;
+  `;
   document.body.appendChild(banner);
 })();
 </script>
