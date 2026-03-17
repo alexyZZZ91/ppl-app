@@ -1362,7 +1362,7 @@ body{
 <body>
 
 <!-- Auth overlay — shown until user is signed in -->
-<div id="authOverlay" style="display:none">
+<div id="authOverlay" style="display:flex">
   <div class="auth-card">
     <div class="auth-logo">PPL<span>·</span>SPLIT</div>
     <div class="auth-tagline">TRAINING TRACKER</div>
@@ -1389,7 +1389,7 @@ body{
   </div>
 </div>
 
-<div class="hdr">
+<div class="hdr" id="appShell" style="display:none">
   <div class="hdr-top">
     <div>
       <div class="hdr-logo">PPL<span>·</span>SPLIT</div>
@@ -1406,8 +1406,8 @@ body{
   </div>
 </div>
 
-<div class="day-strip" id="dayStrip"></div>
-<div class="main" id="mainContent"></div>
+<div class="day-strip" id="dayStrip" style="display:none"></div>
+<div class="main" id="mainContent" style="display:none"></div>
 
 <!-- History view — hidden until HIST tab is active -->
 <div class="main" id="histContent" style="display:none;"></div>
@@ -1490,8 +1490,18 @@ async function _finishSignIn(user){
 /* ── AUTH ── */
 let _authMode = 'signin';
 
-function showAuthOverlay(){ document.getElementById('authOverlay').style.display='flex'; }
-function hideAuthOverlay(){ document.getElementById('authOverlay').style.display='none'; }
+function showAuthOverlay(){
+  document.getElementById('authOverlay').style.display='flex';
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('dayStrip').style.display='none';
+  document.getElementById('mainContent').style.display='none';
+}
+function hideAuthOverlay(){
+  document.getElementById('authOverlay').style.display='none';
+  document.getElementById('appShell').style.display='';
+  document.getElementById('dayStrip').style.display='';
+  document.getElementById('mainContent').style.display='';
+}
 
 function setAuthMode(mode){
   _authMode = mode;
