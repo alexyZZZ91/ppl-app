@@ -493,6 +493,14 @@ body{
   color:var(--bg);
 }
 
+.str-timer-btn{
+  background:none;border:none;color:#6a8aaa;
+  font-size:15px;cursor:pointer;padding:0 4px;
+  opacity:0.85;transition:opacity .2s,color .2s;line-height:1;
+  flex-shrink:0;
+}
+.str-timer-btn:hover,.str-timer-btn:active{opacity:1;color:var(--accent2);}
+
 /* ── RECOVERY ── */
 .rec-grid{
   display:grid;
@@ -1459,9 +1467,17 @@ function onSignedOut(){
 const REST_CIRC = +(2*Math.PI*54).toFixed(2);
 let _restSecs = 90, _restTotal = 90, _restTick = null;
 
-function startRestTimer(){
+function parseDur(dur){
+  const m = dur.match(/(\d+)s/);
+  return m ? parseInt(m[1]) : null;
+}
+
+function startRestTimer(secs, label, sub){
   if(_restTick){ clearInterval(_restTick); _restTick=null; }
+  if(secs) _restSecs = secs;
   _restTotal = _restSecs;
+  document.getElementById('restTimerLabel').textContent = label || 'REST TIMER';
+  document.getElementById('restTimerSub').textContent = sub || '';
   _updateRestUI();
   document.getElementById('restTimerOverlay').classList.add('active');
   _restTick = setInterval(()=>{
@@ -1488,13 +1504,13 @@ function adjustRest(delta){
 
 function skipRest(){
   if(_restTick){ clearInterval(_restTick); _restTick=null; }
-  _restSecs=90;
+  _restSecs=90; _restTotal=90;
   document.getElementById('restTimerOverlay').classList.remove('active');
 }
 
 function _restDone(){
   document.getElementById('restTimerOverlay').classList.remove('active');
-  _restSecs=90;
+  _restSecs=90; _restTotal=90;
   if(navigator.vibrate) navigator.vibrate([150,80,150,80,300]);
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -2062,6 +2078,11 @@ function renderDay(){
 
   const strHTML = d.stretches.map((s,i)=>{
     const key=`s_${d.id}_${i}`, done=!!appData.checked[key];
+    const strSecs = parseDur(s.dur);
+    const isSided = /each|per/i.test(s.dur);
+    const timerBtn = strSecs
+      ? `<button class="str-timer-btn" onclick="startRestTimer(${strSecs},'STRETCH TIMER',${isSided?"'per side'":"''"});event.stopPropagation()" title="Start stretch timer">⏱</button>`
+      : '';
     return `
     <div class="str-card ${done?'done':''}" onclick="toggle('${key}')">
       <div class="str-icon">${s.icon}</div>
@@ -2069,6 +2090,7 @@ function renderDay(){
         <div class="str-name">${s.name}</div>
         <div class="str-dur">${s.dur}</div>
       </div>
+      ${timerBtn}
       <div class="str-chk">${done?'✓':''}</div>
     </div>`;
   }).join('');
@@ -2195,7 +2217,8 @@ if ('serviceWorker' in navigator) {
     el.id = 'restTimerOverlay';
     const r = 54, circ = +(2*Math.PI*r).toFixed(2);
     el.innerHTML = `
-      <div class="rest-lbl">REST TIMER</div>
+      <div id="restTimerLabel" class="rest-lbl">REST TIMER</div>
+      <div id="restTimerSub" class="rest-lbl" style="margin-top:-10px;font-size:8px;opacity:0.6;min-height:10px;"></div>
       <div class="rest-ring">
         <svg width="130" height="130" viewBox="0 0 130 130">
           <circle class="rest-ring-bg" cx="65" cy="65" r="${r}"/>
