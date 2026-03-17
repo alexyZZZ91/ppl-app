@@ -7,7 +7,7 @@
 // The activate handler will automatically purge the old cache.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_NAME = 'ppl-split-v3';
+const CACHE_NAME = 'ppl-split-v4';
 
 const PRECACHE_URLS = [
   './ppl_training_split.html',

@@ -1204,6 +1204,43 @@ body{
   margin-left:6px;padding:0;
 }
 .auth-signout:hover{color:var(--white);}
+
+/* ── MOBILE ── */
+@media (max-width:430px){
+  .hdr{
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .hdr-top{margin-bottom:10px;gap:10px;}
+  .hdr-logo{font-size:28px;letter-spacing:2px;}
+  .hdr-sub{font-size:8px;letter-spacing:1px;}
+  .week-prog{font-size:22px;}
+  .week-label{font-size:7px;letter-spacing:1px;}
+
+  .day-btn{min-width:52px;padding:10px 4px 8px;}
+  .day-btn .d-num{font-size:16px;}
+  .day-btn .d-type{font-size:7px;letter-spacing:1px;}
+
+  .day-hero{padding:16px 16px 14px;}
+  .hero-title{font-size:38px;}
+  .hero-stats{gap:6px;}
+  .hstat{padding:6px 10px;min-width:52px;}
+  .hstat-val{font-size:18px;}
+  .hstat-lbl{font-size:7px;}
+
+  .sec-head{padding:0 16px;}
+  .ex-list{padding:0 10px;}
+  .ex-body{padding:10px 10px;}
+
+  .set-row{padding:6px 10px;}
+  .set-label{font-size:8px;min-width:18px;}
+  .set-input{width:52px;font-size:13px;padding:5px 6px;}
+  .set-unit{font-size:8px;}
+
+  .auth-card{padding:24px 20px;}
+  .auth-logo{font-size:28px;}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1351,6 +1388,7 @@ async function doSignOut(){
 }
 
 async function onSignedIn(user){
+  if(_currentUser?.id === user.id) return; // already loaded for this user
   _currentUser = user;
   hideAuthOverlay();
   await loadDataFromCloud();
@@ -1371,16 +1409,13 @@ function onSignedOut(){
 }
 
 /* ── INIT ── */
-(async function init(){
-  // Listen for auth state changes (handles OAuth redirect callback too)
+(function init(){
+  // onAuthStateChange fires immediately with INITIAL_SESSION (handles refresh,
+  // logout, OAuth redirect and token refresh — no separate getSession needed)
   _sb.auth.onAuthStateChange(async (event, session)=>{
-    if(event==='SIGNED_IN' && session?.user) await onSignedIn(session.user);
-    else if(event==='SIGNED_OUT') onSignedOut();
+    if(session?.user) await onSignedIn(session.user);
+    else onSignedOut();
   });
-  // Check for existing session on load
-  const { data:{ session } } = await _sb.auth.getSession();
-  if(session?.user) await onSignedIn(session.user);
-  else showAuthOverlay();
 })();
 
 function getLastSession(dayId, exIndex){
