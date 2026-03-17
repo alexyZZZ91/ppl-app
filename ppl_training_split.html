@@ -1545,14 +1545,20 @@ async function doSignOut(){
 async function onSignedIn(user){
   if(_currentUser?.id === user.id) return;
   _currentUser = user;
-  hideAuthOverlay();
-  const profile = await loadProfile();
-  if(!profile){
-    showOnboarding();
-    return;
+  try{
+    const profile = await loadProfile();
+    hideAuthOverlay();
+    if(!profile){
+      showOnboarding();
+      return;
+    }
+    if(profile.plan && Array.isArray(profile.plan)) DAYS = profile.plan;
+    await _finishSignIn(user);
+  }catch(err){
+    console.error('onSignedIn error:', err);
+    _currentUser = null;
+    showAuthOverlay();
   }
-  if(profile.plan && Array.isArray(profile.plan)) DAYS = profile.plan;
-  await _finishSignIn(user);
 }
 
 function onSignedOut(){
@@ -1816,6 +1822,7 @@ async function obGenerate(){
 /* ── INIT ── */
 (function init(){
   _sb.auth.onAuthStateChange(async (event, session)=>{
+    console.log('[auth]', event, session?.user?.email ?? 'no user');
     // Clean OAuth hash from URL after Supabase has processed it
     if(window.location.hash) window.history.replaceState(null,'',window.location.pathname);
     try{
