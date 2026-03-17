@@ -638,6 +638,51 @@ body{
   margin:0 1px;
 }
 
+.set-rest-btn{
+  background:none;border:none;color:var(--muted2);
+  font-size:15px;cursor:pointer;padding:0 2px;
+  opacity:0.5;transition:opacity .2s;line-height:1;
+  flex-shrink:0;
+}
+.set-rest-btn:hover,.set-rest-btn:active{opacity:1;}
+
+/* ── REST TIMER OVERLAY ── */
+#restTimerOverlay{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--card);
+  border-top:1px solid var(--border2);
+  border-radius:20px 20px 0 0;
+  padding:20px 24px 32px;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.32,1,.32,1);
+  z-index:300;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+}
+#restTimerOverlay.active{transform:translateY(0);}
+.rest-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted2);}
+.rest-ring{position:relative;width:130px;height:130px;}
+.rest-ring svg{display:block;transform:rotate(-90deg);}
+.rest-ring-bg{fill:none;stroke:var(--border2);stroke-width:7;}
+.rest-ring-arc{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s;}
+.rest-ring-time{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'DM Mono',monospace;font-size:30px;font-weight:700;color:var(--white);
+  letter-spacing:-1px;
+}
+.rest-controls{display:flex;gap:10px;align-items:center;}
+.rest-adj{
+  background:var(--panel2);border:1px solid var(--border2);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;
+  padding:7px 14px;border-radius:6px;cursor:pointer;
+}
+.rest-adj:hover{color:var(--white);}
+.rest-skip{
+  background:var(--accent);color:#000;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;
+  padding:9px 28px;border:none;border-radius:6px;cursor:pointer;
+}
+.rest-skip:hover{opacity:.85;}
+
 .last-sess{
   margin-top:4px;
   padding-top:8px;
@@ -1409,6 +1454,61 @@ function onSignedOut(){
   el.classList.remove('visible');
 }
 
+/* ── REST TIMER ── */
+const REST_CIRC = +(2*Math.PI*54).toFixed(2);
+let _restSecs = 90, _restTotal = 90, _restTick = null;
+
+function startRestTimer(){
+  if(_restTick){ clearInterval(_restTick); _restTick=null; }
+  _restTotal = _restSecs;
+  _updateRestUI();
+  document.getElementById('restTimerOverlay').classList.add('active');
+  _restTick = setInterval(()=>{
+    _restSecs--;
+    _updateRestUI();
+    if(_restSecs<=0){ clearInterval(_restTick); _restTick=null; _restDone(); }
+  },1000);
+}
+
+function _updateRestUI(){
+  const m=Math.floor(_restSecs/60), s=_restSecs%60;
+  document.getElementById('restDisplay').textContent=`${m}:${String(s).padStart(2,'0')}`;
+  const arc=document.getElementById('restArc');
+  const progress=Math.max(0,_restSecs/_restTotal);
+  arc.style.strokeDashoffset=REST_CIRC*(1-progress);
+  arc.style.stroke=_restSecs<=10?'var(--push)':_restSecs<=30?'#f0a500':'var(--accent)';
+}
+
+function adjustRest(delta){
+  _restSecs=Math.max(5,_restSecs+delta);
+  if(_restSecs>_restTotal) _restTotal=_restSecs;
+  _updateRestUI();
+}
+
+function skipRest(){
+  if(_restTick){ clearInterval(_restTick); _restTick=null; }
+  _restSecs=90;
+  document.getElementById('restTimerOverlay').classList.remove('active');
+}
+
+function _restDone(){
+  document.getElementById('restTimerOverlay').classList.remove('active');
+  _restSecs=90;
+  if(navigator.vibrate) navigator.vibrate([150,80,150,80,300]);
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [880,1100,880].forEach((freq,i)=>{
+      const osc=ctx.createOscillator(), g=ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.frequency.value=freq; osc.type='sine';
+      const t=ctx.currentTime+i*0.18;
+      g.gain.setValueAtTime(0.25,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+      osc.start(t); osc.stop(t+0.15);
+    });
+  }catch(e){}
+}
+
 /* ── INIT ── */
 (function init(){
   _sb.auth.onAuthStateChange(async (event, session)=>{
@@ -1904,6 +2004,7 @@ function buildSetLogger(dayId, exIndex, numSets, locked){
                onchange="handleSetInput(${dayId},${exIndex},${s},this)"
                onclick="event.stopPropagation()">
         <span class="set-unit">reps</span>
+        ${locked?'':'<button class="set-rest-btn" onclick="startRestTimer();event.stopPropagation()" title="Rest timer">⏱</button>'}
       </div>`;
   }
 
@@ -2087,6 +2188,29 @@ if ('serviceWorker' in navigator) {
 </style>
 <script>
 (function(){
+  // ── REST TIMER OVERLAY HTML ──
+  (function(){
+    const el = document.createElement('div');
+    el.id = 'restTimerOverlay';
+    const r = 54, circ = +(2*Math.PI*r).toFixed(2);
+    el.innerHTML = `
+      <div class="rest-lbl">REST TIMER</div>
+      <div class="rest-ring">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle class="rest-ring-bg" cx="65" cy="65" r="${r}"/>
+          <circle id="restArc" class="rest-ring-arc" cx="65" cy="65" r="${r}"
+                  stroke-dasharray="${circ}" stroke-dashoffset="0"/>
+        </svg>
+        <div id="restDisplay" class="rest-ring-time">1:30</div>
+      </div>
+      <div class="rest-controls">
+        <button class="rest-adj" onclick="adjustRest(-30)">−30s</button>
+        <button class="rest-skip" onclick="skipRest()">SKIP</button>
+        <button class="rest-adj" onclick="adjustRest(+30)">+30s</button>
+      </div>`;
+    document.body.appendChild(el);
+  })();
+
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = ('standalone' in navigator) && navigator.standalone;
   const dismissed = localStorage.getItem('ppl_install_dismissed');
