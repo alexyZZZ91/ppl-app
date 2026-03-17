@@ -1380,7 +1380,8 @@ async function doEmailAuth(){
 }
 
 async function doGoogleAuth(){
-  await _sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href } });
+  const redirectTo = window.location.origin + window.location.pathname;
+  await _sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo } });
 }
 
 async function doSignOut(){
