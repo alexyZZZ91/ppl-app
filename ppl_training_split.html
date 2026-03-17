@@ -1653,7 +1653,7 @@ function _renderObStep(){
     const cols = cfg.options.length<=3 ? 'ob-cards-3' : '';
     optHTML = `<div class="ob-cards ${cols}">`+cfg.options.map(o=>{
       const sel = _ob[cfg.key]===o.value;
-      return `<button class="ob-card${sel?' selected':''}" onclick="obSelect('${cfg.key}',${JSON.stringify(o.value)})">
+      return `<button class="ob-card${sel?' selected':''}" onclick="obSelect('${cfg.key}','${o.value.replace(/'/g,'&#39;')}')">
         <div class="ob-card-icon">${o.icon}</div>
         <div class="ob-card-label">${o.label}</div>
         ${o.desc?`<div class="ob-card-desc">${o.desc}</div>`:''}
