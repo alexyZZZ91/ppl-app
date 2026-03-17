@@ -1411,9 +1411,9 @@ function onSignedOut(){
 
 /* ── INIT ── */
 (function init(){
-  // onAuthStateChange fires immediately with INITIAL_SESSION (handles refresh,
-  // logout, OAuth redirect and token refresh — no separate getSession needed)
   _sb.auth.onAuthStateChange(async (event, session)=>{
+    // Clean OAuth hash from URL after Supabase has processed it
+    if(window.location.hash) window.history.replaceState(null,'',window.location.pathname);
     if(session?.user) await onSignedIn(session.user);
     else onSignedOut();
   });
