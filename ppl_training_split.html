@@ -1490,8 +1490,7 @@ async function _finishSignIn(user){
   }
 }
 
-async function redoPlan(){
-  _currentUser = null;
+function redoPlan(){
   DAYS = DEFAULT_DAYS;
   const el = document.getElementById('hdrUser');
   el.innerHTML = '';
@@ -2393,7 +2392,7 @@ function renderDay(){
     </div>`;
   }).join('');
 
-  const strHTML = d.stretches.map((s,i)=>{
+  const strHTML = (d.stretches||[]).map((s,i)=>{
     const key=`s_${d.id}_${i}`, done=!!appData.checked[key];
     const strSecs = parseDur(s.dur);
     const isSided = /each|per/i.test(s.dur);
