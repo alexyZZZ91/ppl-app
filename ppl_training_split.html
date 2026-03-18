@@ -1458,6 +1458,22 @@ function saveData(data){
 
 let appData = { checked:{}, sessions:{} };
 
+function normalizePlan(plan){
+  return plan.map((d,i)=>({
+    id:        d.id ?? i,
+    label:     d.label || `Day ${i+1}`,
+    name:      d.name  || d.label || `Day ${i+1}`,
+    tag:       (d.tag  || 'PUSH').toUpperCase(),
+    type:      d.type  || (d.tag || 'push').toLowerCase(),
+    color:     d.color || d.col  || '#ff4e3a',
+    col:       d.col   || d.color || '#ff4e3a',
+    focus:     d.focus || '',
+    subs:      d.subs  || '',
+    exercises: (d.exercises||[]),
+    stretches: (d.stretches||[]),
+  }));
+}
+
 async function loadProfile(){
   try{
     const { data } = await _sb.from('user_profiles').select('*').eq('user_id',_currentUser.id).single();
@@ -1568,7 +1584,7 @@ async function onSignedIn(user){
       showOnboarding();
       return;
     }
-    if(profile.plan && Array.isArray(profile.plan)) DAYS = profile.plan;
+    if(profile.plan && Array.isArray(profile.plan)) DAYS = normalizePlan(profile.plan);
     await _finishSignIn(user, profile); // hideAuthOverlay() called inside after render
   }catch(err){
     console.error('onSignedIn error:', err);
@@ -1817,7 +1833,7 @@ async function obGenerate(){
       }).eq('user_id',_currentUser.id);
       if(updateErr) throw new Error(updateErr.message);
     }
-    DAYS = plan;
+    DAYS = normalizePlan(plan);
     hideOnboarding();
     await _finishSignIn(_currentUser, {
       days_per_week: _ob.daysPerWeek,
