@@ -1432,11 +1432,21 @@ async function loadDataFromCloud(){
       return;
     }
   }catch(e){}
-  // Fall back to local cache for this user
+  // Fall back to local cache for this user — then sync it up to cloud
   try{
     const raw = localStorage.getItem('ppl_v4_cache_'+_currentUser.id);
-    if(raw){ appData = JSON.parse(raw); return; }
-  }catch(e){}
+    if(raw){
+      appData = JSON.parse(raw);
+      // Push local data up to cloud so it's saved going forward
+      const { error } = await _sb.from('workout_data').upsert(
+        { user_id:_currentUser.id, data:appData, updated_at:new Date().toISOString() },
+        { onConflict:'user_id' }
+      );
+      if(error) console.error('initial cloud sync error:', error.message);
+      else console.log('[sync] local data pushed to cloud');
+      return;
+    }
+  }catch(e){ console.error('loadDataFromCloud fallback error:', e); }
   appData = { checked:{}, sessions:{} };
 }
 
@@ -1448,11 +1458,12 @@ function saveData(data){
   // Debounce cloud write by 1.5s
   if(!_currentUser) return;
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(()=>{
-    _sb.from('workout_data').upsert(
+  _saveTimer = setTimeout(async ()=>{
+    const { error } = await _sb.from('workout_data').upsert(
       { user_id:_currentUser.id, data, updated_at:new Date().toISOString() },
       { onConflict:'user_id' }
     );
+    if(error) console.error('saveData cloud error:', error.message);
   }, 1500);
 }
 
