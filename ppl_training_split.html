@@ -1393,7 +1393,7 @@ body{
   <div class="hdr-top">
     <div>
       <div class="hdr-logo">PPL<span>·</span>SPLIT</div>
-      <div class="hdr-sub">6-Day · Plate Loading Machines · Body Recomposition</div>
+      <div class="hdr-sub" id="hdrSub">PPL SPLIT</div>
       <div class="hdr-user" id="hdrUser"></div>
     </div>
     <div class="hdr-right">
@@ -1465,7 +1465,7 @@ async function loadProfile(){
   }catch(e){ return null; }
 }
 
-async function _finishSignIn(user){
+async function _finishSignIn(user, profile){
   try{
     syncActiveDayToToday();
     await loadDataFromCloud();
@@ -1483,6 +1483,11 @@ async function _finishSignIn(user){
       `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
       `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
     el.classList.add('visible');
+    // Update subtitle with profile settings
+    const sub = document.getElementById('hdrSub');
+    if(sub && profile){
+      sub.textContent = `${profile.days_per_week}-Day · ${profile.equipment} · ${profile.goal}`;
+    }
     hideAuthOverlay();
   }catch(err){
     console.error('_finishSignIn error:', err);
@@ -1564,7 +1569,7 @@ async function onSignedIn(user){
       return;
     }
     if(profile.plan && Array.isArray(profile.plan)) DAYS = profile.plan;
-    await _finishSignIn(user); // hideAuthOverlay() called inside after render
+    await _finishSignIn(user, profile); // hideAuthOverlay() called inside after render
   }catch(err){
     console.error('onSignedIn error:', err);
     _currentUser = null;
@@ -1814,7 +1819,11 @@ async function obGenerate(){
     }
     DAYS = plan;
     hideOnboarding();
-    await _finishSignIn(_currentUser);
+    await _finishSignIn(_currentUser, {
+      days_per_week: _ob.daysPerWeek,
+      equipment: _ob.equipment,
+      goal: _ob.goal,
+    });
   }catch(err){
     document.getElementById('onboardingOverlay').innerHTML = `
       <div class="ob-wrap" style="justify-content:center;min-height:80vh;">
