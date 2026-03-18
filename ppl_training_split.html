@@ -501,6 +501,67 @@ body{
 }
 .str-timer-btn:hover,.str-timer-btn:active{opacity:1;color:var(--accent2);}
 
+/* ── ONBOARDING ── */
+#onboardingOverlay{
+  position:fixed;inset:0;background:var(--bg);
+  z-index:250;display:none;flex-direction:column;
+  align-items:center;overflow-y:auto;
+  padding:calc(48px + env(safe-area-inset-top)) 24px 48px;
+}
+.ob-wrap{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:0;}
+.ob-logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--white);margin-bottom:28px;}
+.ob-logo span{color:var(--accent);}
+.ob-dots{display:flex;gap:6px;margin-bottom:28px;}
+.ob-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:all .3s;}
+.ob-dot.active{background:var(--accent);width:24px;border-radius:4px;}
+.ob-dot.done{background:var(--accent2);}
+.ob-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--white);text-align:center;margin-bottom:8px;}
+.ob-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px;line-height:1.5;}
+.ob-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:28px;}
+.ob-cards-3{grid-template-columns:1fr 1fr 1fr;}
+.ob-card{background:var(--panel);border:1.5px solid var(--border);border-radius:10px;padding:16px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .2s;text-align:center;}
+.ob-card:hover{border-color:var(--border2);}
+.ob-card.selected{border-color:var(--accent);background:rgba(232,240,74,.07);}
+.ob-card-icon{font-size:24px;}
+.ob-card-label{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--white);text-transform:uppercase;}
+.ob-card-desc{font-size:10px;color:var(--muted);margin-top:2px;}
+.ob-pills{display:flex;gap:10px;margin-bottom:28px;}
+.ob-pill{background:var(--panel);border:1.5px solid var(--border);border-radius:8px;
+  font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--muted);
+  width:64px;height:64px;cursor:pointer;transition:all .2s;}
+.ob-pill:hover{border-color:var(--border2);color:var(--white);}
+.ob-pill.selected{border-color:var(--accent);color:var(--accent);background:rgba(232,240,74,.07);}
+.ob-checks{display:flex;flex-direction:column;gap:8px;width:100%;margin-bottom:28px;}
+.ob-check-item{display:flex;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--border);
+  border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .2s;text-align:left;}
+.ob-check-item.selected{border-color:var(--accent2);background:rgba(74,240,184,.06);}
+.ob-check-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .2s;}
+.ob-check-item.selected .ob-check-box{background:var(--accent2);border-color:var(--accent2);color:var(--bg);}
+.ob-check-label{font-size:13px;font-weight:500;color:var(--white);}
+.ob-nav{display:flex;justify-content:space-between;align-items:center;width:100%;gap:12px;margin-top:4px;}
+.ob-btn-next{background:var(--accent);color:#000;font-family:'DM Mono',monospace;font-size:11px;
+  font-weight:700;letter-spacing:1.5px;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;flex:1;}
+.ob-btn-next:hover{opacity:.85;}
+.ob-btn-next.disabled{opacity:.35;cursor:not-allowed;}
+.ob-btn-back{background:none;border:1px solid var(--border2);color:var(--muted);font-family:'DM Mono',monospace;
+  font-size:10px;letter-spacing:1px;padding:12px 16px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+.ob-btn-back:hover{color:var(--white);}
+.ob-load-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--white);text-align:center;margin-bottom:8px;}
+.ob-load-sub{font-size:13px;color:var(--muted);text-align:center;line-height:1.6;max-width:300px;}
+.ob-other-input{
+  width:100%;background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:8px;padding:12px 14px;color:var(--white);
+  font-family:'DM Mono',monospace;font-size:12px;outline:none;margin-top:8px;
+  transition:border-color .2s;
+}
+.ob-other-input:focus{border-color:var(--accent);}
+.ob-other-input::placeholder{color:var(--muted2);}
+.ob-spinner{width:48px;height:48px;border:3px solid var(--border2);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:28px auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
 /* ── RECOVERY ── */
 .rec-grid{
   display:grid;
@@ -1301,7 +1362,7 @@ body{
 <body>
 
 <!-- Auth overlay — shown until user is signed in -->
-<div id="authOverlay" style="display:none">
+<div id="authOverlay" style="display:flex">
   <div class="auth-card">
     <div class="auth-logo">PPL<span>·</span>SPLIT</div>
     <div class="auth-tagline">TRAINING TRACKER</div>
@@ -1328,11 +1389,11 @@ body{
   </div>
 </div>
 
-<div class="hdr">
+<div class="hdr" id="appShell" style="display:none">
   <div class="hdr-top">
     <div>
       <div class="hdr-logo">PPL<span>·</span>SPLIT</div>
-      <div class="hdr-sub">6-Day · Plate Loading Machines · Body Recomposition</div>
+      <div class="hdr-sub" id="hdrSub">PPL SPLIT</div>
       <div class="hdr-user" id="hdrUser"></div>
     </div>
     <div class="hdr-right">
@@ -1345,8 +1406,8 @@ body{
   </div>
 </div>
 
-<div class="day-strip" id="dayStrip"></div>
-<div class="main" id="mainContent"></div>
+<div class="day-strip" id="dayStrip" style="display:none"></div>
+<div class="main" id="mainContent" style="display:none"></div>
 
 <!-- History view — hidden until HIST tab is active -->
 <div class="main" id="histContent" style="display:none;"></div>
@@ -1397,11 +1458,82 @@ function saveData(data){
 
 let appData = { checked:{}, sessions:{} };
 
+function normalizePlan(plan){
+  return plan.map((d,i)=>({
+    id:        d.id ?? i,
+    label:     d.label || `Day ${i+1}`,
+    name:      d.name  || d.label || `Day ${i+1}`,
+    tag:       (d.tag  || 'PUSH').toUpperCase(),
+    type:      d.type  || (d.tag || 'push').toLowerCase(),
+    color:     d.color || d.col  || '#ff4e3a',
+    col:       d.col   || d.color || '#ff4e3a',
+    focus:     d.focus || '',
+    subs:      d.subs  || '',
+    exercises: (d.exercises||[]),
+    stretches: (d.stretches||[]),
+  }));
+}
+
+async function loadProfile(){
+  try{
+    const { data } = await _sb.from('user_profiles').select('*').eq('user_id',_currentUser.id).single();
+    return data || null;
+  }catch(e){ return null; }
+}
+
+async function _finishSignIn(user, profile){
+  try{
+    syncActiveDayToToday();
+    await loadDataFromCloud();
+    try{
+      renderTabs(); renderDay(); updateProg();
+    }catch(renderErr){
+      console.warn('renderDay failed with current plan, falling back to default:', renderErr);
+      DAYS = DEFAULT_DAYS;
+      syncActiveDayToToday();
+      renderTabs(); renderDay(); updateProg();
+    }
+    const el = document.getElementById('hdrUser');
+    const name = user.user_metadata?.full_name || user.email || 'User';
+    el.innerHTML = name +
+      `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
+      `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
+    el.classList.add('visible');
+    // Update subtitle with profile settings
+    const sub = document.getElementById('hdrSub');
+    if(sub && profile){
+      sub.textContent = `${profile.days_per_week}-Day · ${profile.equipment} · ${profile.goal}`;
+    }
+    hideAuthOverlay();
+  }catch(err){
+    console.error('_finishSignIn error:', err);
+    showAuthOverlay();
+  }
+}
+
+function redoPlan(){
+  DAYS = DEFAULT_DAYS;
+  const el = document.getElementById('hdrUser');
+  el.innerHTML = '';
+  el.classList.remove('visible');
+  showOnboarding();
+}
+
 /* ── AUTH ── */
 let _authMode = 'signin';
 
-function showAuthOverlay(){ document.getElementById('authOverlay').style.display='flex'; }
-function hideAuthOverlay(){ document.getElementById('authOverlay').style.display='none'; }
+function showAuthOverlay(){
+  document.getElementById('authOverlay').style.display='flex';
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('dayStrip').style.display='none';
+  document.getElementById('mainContent').style.display='none';
+}
+function hideAuthOverlay(){
+  document.getElementById('authOverlay').style.display='none';
+  document.getElementById('appShell').style.display='';
+  document.getElementById('dayStrip').style.display='';
+  document.getElementById('mainContent').style.display='';
+}
 
 function setAuthMode(mode){
   _authMode = mode;
@@ -1443,15 +1575,22 @@ async function doSignOut(){
 }
 
 async function onSignedIn(user){
-  if(_currentUser?.id === user.id) return; // already loaded for this user
+  if(_currentUser?.id === user.id) return;
   _currentUser = user;
-  hideAuthOverlay();
-  await loadDataFromCloud();
-  renderTabs(); renderDay(); updateProg();
-  const el = document.getElementById('hdrUser');
-  const name = user.user_metadata?.full_name || user.email || 'User';
-  el.innerHTML = name + `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
-  el.classList.add('visible');
+  try{
+    const profile = await loadProfile();
+    if(!profile){
+      hideAuthOverlay();
+      showOnboarding();
+      return;
+    }
+    if(profile.plan && Array.isArray(profile.plan)) DAYS = normalizePlan(profile.plan);
+    await _finishSignIn(user, profile); // hideAuthOverlay() called inside after render
+  }catch(err){
+    console.error('onSignedIn error:', err);
+    _currentUser = null;
+    showAuthOverlay();
+  }
 }
 
 function onSignedOut(){
@@ -1526,13 +1665,209 @@ function _restDone(){
   }catch(e){}
 }
 
+/* ── ONBOARDING ── */
+const EDGE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/hyper-responder';
+
+let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, injuries:[], otherInjury:'' };
+
+const OB_STEPS = [
+  { key:'experience', title:'Experience Level', sub:'How long have you been training consistently?', type:'card',
+    options:[
+      {value:'Beginner',    icon:'🌱', label:'Beginner',     desc:'Under 1 year'},
+      {value:'Intermediate',icon:'💪', label:'Intermediate', desc:'1–3 years'},
+      {value:'Advanced',    icon:'🏆', label:'Advanced',     desc:'3+ years'},
+    ]},
+  { key:'equipment', title:'Available Equipment', sub:'What do you have access to?', type:'card',
+    options:[
+      {value:'Full gym (machines, cables, barbells, dumbbells)', icon:'🏋️', label:'Full Gym'},
+      {value:'Machines only',    icon:'🤖', label:'Machines Only'},
+      {value:'Barbell and rack', icon:'🔩', label:'Barbell + Rack'},
+      {value:'Dumbbells only',   icon:'🎯', label:'Dumbbells Only'},
+      {value:'Bodyweight only',  icon:'🏠', label:'Bodyweight'},
+    ]},
+  { key:'goal', title:'Primary Goal', sub:'What are you training for?', type:'card',
+    options:[
+      {value:'Build muscle',    icon:'💪', label:'Build Muscle'},
+      {value:'Get stronger',    icon:'🏋️', label:'Get Stronger'},
+      {value:'Lose fat',        icon:'🔥', label:'Lose Fat'},
+      {value:'General fitness', icon:'❤️', label:'General Fitness'},
+    ]},
+  { key:'daysPerWeek', title:'Days Per Week', sub:'How many days can you train?', type:'pill',
+    options:[{value:3,label:'3'},{value:4,label:'4'},{value:5,label:'5'},{value:6,label:'6'}]},
+  { key:'injuries', title:'Any Limitations?', sub:'Select areas to avoid. (Optional)', type:'check',
+    options:[
+      {value:'Knees',       label:'Knees'},
+      {value:'Lower back',  label:'Lower back'},
+      {value:'Shoulders',   label:'Shoulders'},
+      {value:'Elbows',      label:'Elbows'},
+      {value:'None',        label:'No limitations'},
+    ]},
+];
+
+function showOnboarding(){
+  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, injuries:[], otherInjury:'' };
+  document.getElementById('onboardingOverlay').style.display='flex';
+  _renderObStep();
+}
+function hideOnboarding(){ document.getElementById('onboardingOverlay').style.display='none'; }
+
+function _renderObStep(){
+  const cfg = OB_STEPS[_ob.step];
+  const total = OB_STEPS.length;
+  const dots = OB_STEPS.map((_,i)=>`<div class="ob-dot ${i===_ob.step?'active':i<_ob.step?'done':''}"></div>`).join('');
+
+  let optHTML = '';
+  if(cfg.type==='card'){
+    const cols = cfg.options.length<=3 ? 'ob-cards-3' : '';
+    optHTML = `<div class="ob-cards ${cols}">`+cfg.options.map(o=>{
+      const sel = _ob[cfg.key]===o.value;
+      return `<button class="ob-card${sel?' selected':''}" onclick="obSelect('${cfg.key}','${o.value.replace(/'/g,'&#39;')}')">
+        <div class="ob-card-icon">${o.icon}</div>
+        <div class="ob-card-label">${o.label}</div>
+        ${o.desc?`<div class="ob-card-desc">${o.desc}</div>`:''}
+      </button>`;
+    }).join('')+`</div>`;
+  } else if(cfg.type==='pill'){
+    optHTML = `<div class="ob-pills">`+cfg.options.map(o=>{
+      const sel = _ob[cfg.key]===o.value;
+      return `<button class="ob-pill${sel?' selected':''}" onclick="obSelect('${cfg.key}',${o.value})">${o.label}</button>`;
+    }).join('')+`</div>`;
+  } else {
+    optHTML = `<div class="ob-checks">`+cfg.options.map(o=>{
+      const sel = _ob.injuries.includes(o.value);
+      return `<button class="ob-check-item${sel?' selected':''}" onclick="obToggleInjury('${o.value}')">
+        <div class="ob-check-box">${sel?'✓':''}</div>
+        <div class="ob-check-label">${o.label}</div>
+      </button>`;
+    }).join('')+
+    `<input id="obOtherInput" type="text" class="ob-other-input"
+       placeholder="Other limitations e.g. hip flexor, wrist pain…"
+       value="${_ob.otherInjury.replace(/"/g,'&quot;')}"
+       oninput="_ob.otherInjury=this.value">
+    </div>`;
+  }
+
+  const isLast = _ob.step===total-1;
+  const canNext = cfg.type==='check' || _ob[cfg.key]!==null;
+  const backBtn = _ob.step>0 ? `<button class="ob-btn-back" onclick="obBack()">← Back</button>` : '<div></div>';
+
+  document.getElementById('onboardingOverlay').innerHTML = `
+    <div class="ob-wrap">
+      <div class="ob-logo">PPL<span>·</span>SPLIT</div>
+      <div class="ob-dots">${dots}</div>
+      <div class="ob-title">${cfg.title}</div>
+      <div class="ob-sub">${cfg.sub}</div>
+      ${optHTML}
+      <div class="ob-nav">
+        ${backBtn}
+        <button class="ob-btn-next${canNext?'':' disabled'}" onclick="obNext()" ${canNext?'':'disabled'}>
+          ${isLast?'Generate My Plan →':'Next →'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function obSelect(key, val){
+  _ob[key]=val;
+  _renderObStep();
+}
+
+function obToggleInjury(val){
+  if(val==='None'){ _ob.injuries = _ob.injuries.includes('None') ? [] : ['None']; }
+  else {
+    _ob.injuries = _ob.injuries.filter(i=>i!=='None');
+    _ob.injuries.includes(val) ? (_ob.injuries=_ob.injuries.filter(i=>i!==val)) : _ob.injuries.push(val);
+  }
+  _renderObStep();
+}
+
+function obBack(){ if(_ob.step>0){ _ob.step--; _renderObStep(); } }
+
+async function obNext(){
+  const cfg = OB_STEPS[_ob.step];
+  if(cfg.type!=='check' && _ob[cfg.key]===null) return;
+  if(_ob.step < OB_STEPS.length-1){ _ob.step++; _renderObStep(); }
+  else await obGenerate();
+}
+
+async function obGenerate(){
+  document.getElementById('onboardingOverlay').innerHTML = `
+    <div class="ob-wrap" style="justify-content:center;min-height:80vh;">
+      <div class="ob-logo">PPL<span>·</span>SPLIT</div>
+      <div class="ob-spinner"></div>
+      <div class="ob-load-title">Building Your Plan</div>
+      <div class="ob-load-sub">Claude is generating a personalised programme based on your profile…</div>
+    </div>`;
+  try{
+    const { data:{ session } } = await _sb.auth.getSession();
+    const baseInjuries = _ob.injuries.includes('None') ? [] : _ob.injuries.filter(i=>i!=='None');
+    if(_ob.otherInjury.trim()) baseInjuries.push(_ob.otherInjury.trim());
+    const res = await fetch(EDGE_FN,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body: JSON.stringify({
+        experience: _ob.experience,
+        equipment:  _ob.equipment,
+        goal:       _ob.goal,
+        daysPerWeek:_ob.daysPerWeek,
+        injuries:   baseInjuries,
+      }),
+    });
+    const json = await res.json();
+    if(!res.ok||json.error) throw new Error(json.error||`HTTP ${res.status}: ${JSON.stringify(json)}`);
+    const plan = json.plan;
+    // Insert profile row; if it already exists, update instead
+    const profileData = {
+      user_id:_currentUser.id,
+      experience:_ob.experience, equipment:_ob.equipment,
+      goal:_ob.goal, days_per_week:_ob.daysPerWeek,
+      injuries:baseInjuries, plan,
+    };
+    const { error: insertErr } = await _sb.from('user_profiles').insert(profileData);
+    if(insertErr){
+      // Row exists — update it directly
+      const { error: updateErr } = await _sb.from('user_profiles').update({
+        experience:_ob.experience, equipment:_ob.equipment,
+        goal:_ob.goal, days_per_week:_ob.daysPerWeek,
+        injuries:baseInjuries, plan,
+      }).eq('user_id',_currentUser.id);
+      if(updateErr) throw new Error(updateErr.message);
+    }
+    DAYS = normalizePlan(plan);
+    hideOnboarding();
+    await _finishSignIn(_currentUser, {
+      days_per_week: _ob.daysPerWeek,
+      equipment: _ob.equipment,
+      goal: _ob.goal,
+    });
+  }catch(err){
+    document.getElementById('onboardingOverlay').innerHTML = `
+      <div class="ob-wrap" style="justify-content:center;min-height:80vh;">
+        <div class="ob-logo">PPL<span>·</span>SPLIT</div>
+        <div style="font-size:40px;margin:20px 0">⚠️</div>
+        <div class="ob-load-title">Something went wrong</div>
+        <div class="ob-load-sub" style="margin-bottom:24px">${err.message}</div>
+        <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
+          <button class="ob-btn-next" style="flex:none" onclick="obGenerate()">Try Again</button>
+          <button class="ob-btn-back" onclick="_ob.step=4;_renderObStep()">← Go Back</button>
+        </div>
+      </div>`;
+  }
+}
+
 /* ── INIT ── */
 (function init(){
   _sb.auth.onAuthStateChange(async (event, session)=>{
+    console.log('[auth]', event, session?.user?.email ?? 'no user');
     // Clean OAuth hash from URL after Supabase has processed it
     if(window.location.hash) window.history.replaceState(null,'',window.location.pathname);
-    if(session?.user) await onSignedIn(session.user);
-    else onSignedOut();
+    try{
+      if(session?.user) await onSignedIn(session.user);
+      else onSignedOut();
+    }catch(err){
+      console.error('Auth state change error:', err);
+      onSignedOut();
+    }
   });
 })();
 
@@ -1594,7 +1929,7 @@ function completeDay(dayId){
   renderDay(); renderTabs(); updateProg();
 }
 
-const DAYS = [
+const DEFAULT_DAYS = [
   {
     id:0, label:"MON", name:"PUSH A", type:"push", col:"var(--push)",
     focus:"Chest Primary · Shoulders · Triceps",
@@ -1717,9 +2052,15 @@ const DAYS = [
   }
 ];
 
-// Map JS getDay() (0=Sun … 6=Sat) → DAYS index (Mon=0 … Sat=5, Sun falls back to Mon)
-const _dowMap = [0, 0, 1, 2, 3, 4, 5]; // Sun→Mon, Mon→D1, Tue→D2 … Sat→D6
-let activeDay = _dowMap[new Date().getDay()];
+let DAYS = DEFAULT_DAYS;
+
+function syncActiveDayToToday(){
+  const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
+  const i = DAYS.findIndex(d=>d.label===lbl);
+  activeDay = i>=0 ? i : 0;
+}
+let activeDay = 0;
+syncActiveDayToToday();
 
 function toggle(key){
   appData.checked[key] = !appData.checked[key];
@@ -2076,7 +2417,7 @@ function renderDay(){
     </div>`;
   }).join('');
 
-  const strHTML = d.stretches.map((s,i)=>{
+  const strHTML = (d.stretches||[]).map((s,i)=>{
     const key=`s_${d.id}_${i}`, done=!!appData.checked[key];
     const strSecs = parseDur(s.dur);
     const isSided = /each|per/i.test(s.dur);
@@ -2211,6 +2552,13 @@ if ('serviceWorker' in navigator) {
 </style>
 <script>
 (function(){
+  // ── ONBOARDING OVERLAY ──
+  (function(){
+    const ob = document.createElement('div');
+    ob.id = 'onboardingOverlay';
+    document.body.appendChild(ob);
+  })();
+
   // ── REST TIMER OVERLAY HTML ──
   (function(){
     const el = document.createElement('div');
