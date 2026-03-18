@@ -1479,12 +1479,24 @@ async function _finishSignIn(user){
     }
     const el = document.getElementById('hdrUser');
     const name = user.user_metadata?.full_name || user.email || 'User';
-    el.innerHTML = name + `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
+    el.innerHTML = name +
+      `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
+      `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
     el.classList.add('visible');
+    hideAuthOverlay();
   }catch(err){
     console.error('_finishSignIn error:', err);
     showAuthOverlay();
   }
+}
+
+async function redoPlan(){
+  _currentUser = null;
+  DAYS = DEFAULT_DAYS;
+  const el = document.getElementById('hdrUser');
+  el.innerHTML = '';
+  el.classList.remove('visible');
+  showOnboarding();
 }
 
 /* ── AUTH ── */
@@ -1547,13 +1559,13 @@ async function onSignedIn(user){
   _currentUser = user;
   try{
     const profile = await loadProfile();
-    hideAuthOverlay();
     if(!profile){
+      hideAuthOverlay();
       showOnboarding();
       return;
     }
     if(profile.plan && Array.isArray(profile.plan)) DAYS = profile.plan;
-    await _finishSignIn(user);
+    await _finishSignIn(user); // hideAuthOverlay() called inside after render
   }catch(err){
     console.error('onSignedIn error:', err);
     _currentUser = null;
@@ -1782,7 +1794,7 @@ async function obGenerate(){
       }),
     });
     const json = await res.json();
-    if(!res.ok||json.error) throw new Error(json.error||'Generation failed');
+    if(!res.ok||json.error) throw new Error(json.error||`HTTP ${res.status}: ${JSON.stringify(json)}`);
     const plan = json.plan;
     // Insert profile row; if it already exists, update instead
     const profileData = {
