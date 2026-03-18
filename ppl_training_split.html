@@ -1448,11 +1448,12 @@ function saveData(data){
   // Debounce cloud write by 1.5s
   if(!_currentUser) return;
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(()=>{
-    _sb.from('workout_data').upsert(
+  _saveTimer = setTimeout(async ()=>{
+    const { error } = await _sb.from('workout_data').upsert(
       { user_id:_currentUser.id, data, updated_at:new Date().toISOString() },
       { onConflict:'user_id' }
     );
+    if(error) console.error('saveData cloud error:', error.message);
   }, 1500);
 }
 
