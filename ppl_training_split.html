@@ -717,41 +717,88 @@ body{
 .set-rest-btn:hover,.set-rest-btn:active{opacity:1;color:var(--accent);}
 
 /* ── REST TIMER OVERLAY ── */
+#restTimerBackdrop{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);z-index:299;
+}
+#restTimerBackdrop.active{display:block;}
 #restTimerOverlay{
   position:fixed;bottom:0;left:0;right:0;
-  background:var(--card);
+  background:var(--panel);
   border-top:1px solid var(--border2);
-  border-radius:20px 20px 0 0;
-  padding:20px 24px 32px;
+  border-radius:24px 24px 0 0;
+  padding:0 24px calc(32px + env(safe-area-inset-bottom));
   transform:translateY(100%);
   transition:transform .35s cubic-bezier(.32,1,.32,1);
   z-index:300;
-  display:flex;flex-direction:column;align-items:center;gap:16px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
 }
 #restTimerOverlay.active{transform:translateY(0);}
-.rest-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted2);}
-.rest-ring{position:relative;width:130px;height:130px;}
+.rest-handle{
+  width:36px;height:4px;border-radius:2px;
+  background:var(--border2);margin:14px 0 4px;flex-shrink:0;
+}
+.rest-ctx{
+  font-size:12px;color:var(--muted);letter-spacing:.3px;
+  text-align:center;max-width:260px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-height:16px;
+}
+.rest-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2.5px;color:var(--muted2);margin-top:-4px;}
+.rest-ring{position:relative;width:150px;height:150px;}
 .rest-ring svg{display:block;transform:rotate(-90deg);}
-.rest-ring-bg{fill:none;stroke:var(--border2);stroke-width:7;}
-.rest-ring-arc{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s;}
+.rest-ring-bg{fill:none;stroke:var(--border2);stroke-width:8;}
+.rest-ring-arc{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .5s linear,stroke .3s;}
 .rest-ring-time{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  font-family:'DM Mono',monospace;font-size:30px;font-weight:700;color:var(--white);
-  letter-spacing:-1px;
+  font-family:'DM Mono',monospace;font-size:38px;font-weight:700;color:var(--white);
+  letter-spacing:-2px;
 }
-.rest-controls{display:flex;gap:10px;align-items:center;}
+.rest-controls{display:flex;gap:8px;align-items:center;width:100%;}
 .rest-adj{
+  flex:1;
   background:var(--panel2);border:1px solid var(--border2);color:var(--muted);
   font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;
-  padding:7px 14px;border-radius:6px;cursor:pointer;
+  padding:11px 0;border-radius:8px;cursor:pointer;
+  transition:color .15s,border-color .15s;
 }
-.rest-adj:hover{color:var(--white);}
+.rest-adj:hover{color:var(--white);border-color:var(--accent2);}
 .rest-skip{
-  background:var(--accent);color:#000;
+  flex:2;
+  background:var(--accent);color:#080b0f;
   font-family:'DM Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;
-  padding:9px 28px;border:none;border-radius:6px;cursor:pointer;
+  padding:13px 0;border:none;border-radius:8px;cursor:pointer;
+  transition:opacity .15s;
 }
 .rest-skip:hover{opacity:.85;}
+
+/* ── EXERCISE ALTERNATIVES ── */
+.alts-btn{
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;
+  text-transform:uppercase;padding:3px 8px;border-radius:3px;
+  border:1px solid var(--border2);background:transparent;color:var(--muted);
+  cursor:pointer;transition:color .15s,border-color .15s;
+}
+.alts-btn.open,.alts-btn:hover{color:var(--accent2);border-color:var(--accent2);}
+.alts-panel{
+  display:none;width:100%;
+  padding:8px 28px 10px 28px;
+  border-top:1px solid var(--border);
+  background:rgba(0,0,0,.18);
+}
+.alts-panel.open{display:block;}
+.alts-title{
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;
+  color:var(--muted2);margin-bottom:6px;text-transform:uppercase;
+}
+.alt-item{
+  font-size:12px;color:var(--muted);padding:3px 0;
+  display:flex;align-items:center;gap:8px;
+}
+.alt-item::before{
+  content:'';display:inline-block;width:4px;height:4px;
+  border-radius:50%;background:var(--border2);flex-shrink:0;
+}
 
 .last-sess{
   margin-top:4px;
@@ -1222,6 +1269,92 @@ body{
   line-height:2;
 }
 
+/* ── PROGRAM TIMELINE ── */
+.ptl-wrap{ padding:0 16px 24px; }
+.ptl-week{ margin-bottom:2px; }
+.ptl-week-hdr{
+  display:flex;align-items:center;gap:8px;
+  padding:14px 0 7px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:2px;
+}
+.ptl-week.current>.ptl-week-hdr{ border-bottom-color:var(--border2); }
+.ptl-week-num{
+  font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--white);
+}
+.ptl-week-range{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted2);flex:1;
+}
+.ptl-week-badge{
+  font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1.5px;
+  padding:2px 7px;border-radius:3px;
+  background:rgba(232,240,74,.08);border:1px solid rgba(232,240,74,.25);color:var(--accent);
+}
+.ptl-day{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 2px;
+  border-bottom:1px solid rgba(30,42,56,.6);
+}
+.ptl-day:last-of-type{ border-bottom:none; }
+.ptl-status-icon{
+  width:18px;flex-shrink:0;
+  font-family:'DM Mono',monospace;font-size:11px;text-align:center;
+}
+.ptl-day.done   .ptl-status-icon{ color:var(--accent); }
+.ptl-day.today  .ptl-status-icon{ color:var(--accent2); }
+.ptl-day.missed .ptl-status-icon{ color:var(--muted2); }
+.ptl-day.future .ptl-status-icon{ color:var(--border2); }
+.ptl-day-info{ flex:1;display:flex;align-items:center;gap:8px;min-width:0; }
+.ptl-day-date{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;
+  color:var(--muted);flex-shrink:0;width:38px;
+}
+.ptl-day-name{
+  font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ptl-day-name.push{ color:var(--push); }
+.ptl-day-name.pull{ color:var(--pull); }
+.ptl-day-name.legs{ color:var(--legs); }
+.ptl-day.future .ptl-day-name,
+.ptl-day.missed .ptl-day-name{ color:var(--muted); }
+.ptl-day-meta{ display:flex;align-items:center;gap:6px;flex-shrink:0; }
+.ptl-sets{
+  font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;
+}
+.ptl-badge{
+  font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1px;
+  padding:2px 6px;border-radius:3px;text-transform:uppercase;
+}
+.ptl-badge.done  { background:rgba(232,240,74,.1);  color:var(--accent);  border:1px solid rgba(232,240,74,.25); }
+.ptl-badge.today { background:rgba(74,240,184,.1);  color:var(--accent2); border:1px solid rgba(74,240,184,.25); }
+.ptl-badge.missed{ background:rgba(74,96,112,.1);   color:var(--muted);   border:1px solid var(--border); }
+/* Program Refresh card */
+.ptl-refresh{
+  margin:14px 0 4px;padding:16px;
+  border-radius:10px;
+  border:1px solid rgba(232,240,74,.2);
+  background:rgba(232,240,74,.03);
+  display:flex;align-items:center;gap:14px;
+}
+.ptl-refresh-icon{ font-size:26px;flex-shrink:0; }
+.ptl-refresh-body{ flex:1; }
+.ptl-refresh-title{
+  font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.5px;
+  color:var(--accent);margin-bottom:3px;
+}
+.ptl-refresh-sub{
+  font-size:11px;color:var(--muted);font-weight:300;line-height:1.4;
+}
+.ptl-refresh-btn{
+  flex-shrink:0;
+  background:var(--accent);color:#080b0f;
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1px;
+  padding:9px 14px;border:none;border-radius:6px;cursor:pointer;
+  transition:opacity .15s;
+}
+.ptl-refresh-btn:hover{ opacity:.85; }
+
 /* ── RESET ── */
 .reset-area{padding:0 16px 8px;}
 
@@ -1510,6 +1643,9 @@ async function _finishSignIn(user, profile){
       `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
       `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
     el.classList.add('visible');
+    // Load program timeline metadata
+    if(profile?.program_weeks)      _programWeeks     = profile.program_weeks;
+    if(profile?.program_start_date) _programStartDate = profile.program_start_date;
     // Update subtitle with profile settings
     const sub = document.getElementById('hdrSub');
     if(sub && profile){
@@ -1614,27 +1750,41 @@ function onSignedOut(){
 }
 
 /* ── REST TIMER ── */
-const REST_CIRC = +(2*Math.PI*54).toFixed(2);
-let _restSecs = 90, _restTotal = 90, _restTick = null;
+const REST_CIRC = +(2*Math.PI*65).toFixed(2);
+let _restSecs = 90, _restTotal = 90, _restTick = null, _restEndTime = null;
+
+/* Wake lock — keeps screen on while timer runs */
+let _wakeLock = null;
+async function _requestWakeLock(){
+  if(!('wakeLock' in navigator)) return;
+  try{ _wakeLock = await navigator.wakeLock.request('screen');
+    _wakeLock.addEventListener('release',()=>{_wakeLock=null;}); }catch(e){}
+}
+function _releaseWakeLock(){ if(_wakeLock){_wakeLock.release();_wakeLock=null;} }
 
 function parseDur(dur){
   const m = dur.match(/(\d+)s/);
   return m ? parseInt(m[1]) : null;
 }
 
-function startRestTimer(secs, label, sub){
+function startRestTimer(secs, label, sub, ctx){
   if(_restTick){ clearInterval(_restTick); _restTick=null; }
   if(secs) _restSecs = secs;
   _restTotal = _restSecs;
+  _restEndTime = Date.now() + _restSecs * 1000;
   document.getElementById('restTimerLabel').textContent = label || 'REST TIMER';
   document.getElementById('restTimerSub').textContent = sub || '';
+  const ctxEl = document.getElementById('restTimerCtx');
+  if(ctxEl) ctxEl.textContent = ctx || '';
   _updateRestUI();
   document.getElementById('restTimerOverlay').classList.add('active');
+  document.getElementById('restTimerBackdrop').classList.add('active');
+  _requestWakeLock();
   _restTick = setInterval(()=>{
-    _restSecs--;
+    _restSecs = Math.max(0, Math.round((_restEndTime - Date.now()) / 1000));
     _updateRestUI();
     if(_restSecs<=0){ clearInterval(_restTick); _restTick=null; _restDone(); }
-  },1000);
+  },500);
 }
 
 function _updateRestUI(){
@@ -1648,19 +1798,24 @@ function _updateRestUI(){
 
 function adjustRest(delta){
   _restSecs=Math.max(5,_restSecs+delta);
+  if(_restEndTime) _restEndTime += delta*1000;
   if(_restSecs>_restTotal) _restTotal=_restSecs;
   _updateRestUI();
 }
 
 function skipRest(){
   if(_restTick){ clearInterval(_restTick); _restTick=null; }
-  _restSecs=90; _restTotal=90;
+  _restSecs=90; _restTotal=90; _restEndTime=null;
+  _releaseWakeLock();
   document.getElementById('restTimerOverlay').classList.remove('active');
+  document.getElementById('restTimerBackdrop').classList.remove('active');
 }
 
 function _restDone(){
   document.getElementById('restTimerOverlay').classList.remove('active');
-  _restSecs=90; _restTotal=90;
+  document.getElementById('restTimerBackdrop').classList.remove('active');
+  _restSecs=90; _restTotal=90; _restEndTime=null;
+  _releaseWakeLock();
   if(navigator.vibrate) navigator.vibrate([150,80,150,80,300]);
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -1676,10 +1831,20 @@ function _restDone(){
   }catch(e){}
 }
 
+/* Recalculate timer when app returns to foreground after sleep/switch */
+document.addEventListener('visibilitychange', async ()=>{
+  if(!document.hidden && _restTick && _restEndTime){
+    _restSecs = Math.max(0, Math.round((_restEndTime - Date.now()) / 1000));
+    _updateRestUI();
+    if(_restSecs <= 0){ clearInterval(_restTick); _restTick=null; _restDone(); }
+    else _requestWakeLock(); // re-acquire if OS released it
+  }
+});
+
 /* ── ONBOARDING ── */
 const EDGE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/hyper-responder';
 
-let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, injuries:[], otherInjury:'' };
+let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, programWeeks:8, injuries:[], otherInjury:'' };
 
 const OB_STEPS = [
   { key:'experience', title:'Experience Level', sub:'How long have you been training consistently?', type:'card',
@@ -1705,6 +1870,8 @@ const OB_STEPS = [
     ]},
   { key:'daysPerWeek', title:'Days Per Week', sub:'How many days can you train?', type:'pill',
     options:[{value:3,label:'3'},{value:4,label:'4'},{value:5,label:'5'},{value:6,label:'6'}]},
+  { key:'programWeeks', title:'Program Duration', sub:'How many weeks before we prompt you to reassess and refresh your plan?', type:'pill',
+    options:[{value:4,label:'4 wks'},{value:6,label:'6 wks'},{value:8,label:'8 wks'},{value:10,label:'10 wks'}]},
   { key:'injuries', title:'Any Limitations?', sub:'Select areas to avoid. (Optional)', type:'check',
     options:[
       {value:'Knees',       label:'Knees'},
@@ -1716,7 +1883,7 @@ const OB_STEPS = [
 ];
 
 function showOnboarding(){
-  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, injuries:[], otherInjury:'' };
+  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, programWeeks:8, injuries:[], otherInjury:'' };
   document.getElementById('onboardingOverlay').style.display='flex';
   _renderObStep();
 }
@@ -1828,11 +1995,13 @@ async function obGenerate(){
     if(!res.ok||json.error) throw new Error(json.error||`HTTP ${res.status}: ${JSON.stringify(json)}`);
     const plan = json.plan;
     // Insert profile row; if it already exists, update instead
+    const today = getToday();
     const profileData = {
       user_id:_currentUser.id,
       experience:_ob.experience, equipment:_ob.equipment,
       goal:_ob.goal, days_per_week:_ob.daysPerWeek,
       injuries:baseInjuries, plan,
+      program_weeks:_ob.programWeeks, program_start_date:today,
     };
     const { error: insertErr } = await _sb.from('user_profiles').insert(profileData);
     if(insertErr){
@@ -1841,6 +2010,7 @@ async function obGenerate(){
         experience:_ob.experience, equipment:_ob.equipment,
         goal:_ob.goal, days_per_week:_ob.daysPerWeek,
         injuries:baseInjuries, plan,
+        program_weeks:_ob.programWeeks, program_start_date:today,
       }).eq('user_id',_currentUser.id);
       if(updateErr) throw new Error(updateErr.message);
     }
@@ -1850,6 +2020,8 @@ async function obGenerate(){
       days_per_week: _ob.daysPerWeek,
       equipment: _ob.equipment,
       goal: _ob.goal,
+      program_weeks: _ob.programWeeks,
+      program_start_date: today,
     });
   }catch(err){
     document.getElementById('onboardingOverlay').innerHTML = `
@@ -1860,7 +2032,7 @@ async function obGenerate(){
         <div class="ob-load-sub" style="margin-bottom:24px">${err.message}</div>
         <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
           <button class="ob-btn-next" style="flex:none" onclick="obGenerate()">Try Again</button>
-          <button class="ob-btn-back" onclick="_ob.step=4;_renderObStep()">← Go Back</button>
+          <button class="ob-btn-back" onclick="_ob.step=OB_STEPS.length-1;_renderObStep()">← Go Back</button>
         </div>
       </div>`;
   }
@@ -1925,6 +2097,95 @@ function formatDate(iso){
   return `${months[parseInt(m)-1]} ${parseInt(d)}`;
 }
 
+function addDays(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+function renderProgramTimeline(){
+  if(!_programStartDate) return renderSessionList();
+  const today  = getToday();
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const LABELS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+
+  let html = `<div class="ptl-wrap">
+    <div class="sess-section-title" style="padding-top:16px">${_programWeeks}-WEEK PROGRAM</div>`;
+
+  for(let w=0; w<_programWeeks; w++){
+    const weekStartStr = addDays(_programStartDate, w*7);
+    const weekEndStr   = addDays(_programStartDate, w*7+6);
+    const isLastWeek   = w===_programWeeks-1;
+
+    // Check if this week has any activity (to collapse far-future empty weeks visually via CSS)
+    const hasActivity = Array.from({length:7},(_,d)=>addDays(_programStartDate,w*7+d))
+      .some(ds=>appData.sessions[ds]);
+    const isCurrent = weekStartStr<=today && today<=weekEndStr;
+
+    html += `<div class="ptl-week${isCurrent?' current':''}${isLastWeek?' final':''}">
+      <div class="ptl-week-hdr">
+        <span class="ptl-week-num">WEEK ${w+1}</span>
+        <span class="ptl-week-range">${formatDate(weekStartStr)} – ${formatDate(weekEndStr)}</span>
+        ${isLastWeek?'<span class="ptl-week-badge">FINAL</span>':''}
+      </div>`;
+
+    for(let d=0; d<7; d++){
+      const dateStr  = addDays(_programStartDate, w*7+d);
+      const dow      = new Date(dateStr+'T00:00:00').getDay();
+      const dayLabel = LABELS[dow];
+      const dayDef   = DAYS.find(day=>day.label===dayLabel);
+      if(!dayDef) continue;
+
+      const sessionData = appData.sessions[dateStr]?.[dayDef.id];
+      const completed   = !!sessionData?._completed;
+      const isToday     = dateStr===today;
+      const missed      = dateStr<today && !completed && !isToday;
+      const isFuture    = dateStr>today;
+
+      let setsLogged=0;
+      if(sessionData){
+        dayDef.exercises.forEach((_,i)=>{
+          const sets=sessionData[i];
+          if(sets&&Array.isArray(sets)) setsLogged+=sets.filter(s=>s&&(s.wt||s.reps)).length;
+        });
+      }
+
+      const status = completed?'done':isToday?'today':missed?'missed':'future';
+      const icon   = completed?'✓':isToday?'▶':missed?'○':'·';
+      const [,mo,dy] = dateStr.split('-');
+      const dateLabel = `${MONTHS[parseInt(mo)-1]} ${parseInt(dy)}`;
+
+      html += `<div class="ptl-day ${status}">
+        <div class="ptl-status-icon">${icon}</div>
+        <div class="ptl-day-info">
+          <span class="ptl-day-date">${dateLabel}</span>
+          <span class="ptl-day-name ${dayDef.type}">${dayDef.name}</span>
+        </div>
+        <div class="ptl-day-meta">
+          ${completed?`<span class="ptl-sets">${setsLogged} SETS</span>`:''}
+          ${status!=='future'?`<span class="ptl-badge ${status}">${completed?'DONE':isToday?'TODAY':'MISSED'}</span>`:''}
+        </div>
+      </div>`;
+    }
+
+    if(isLastWeek){
+      html += `<div class="ptl-refresh">
+        <div class="ptl-refresh-icon">🔄</div>
+        <div class="ptl-refresh-body">
+          <div class="ptl-refresh-title">Program Refresh</div>
+          <div class="ptl-refresh-sub">You've completed your ${_programWeeks}-week block — time to reassess, progress your weights, and refresh your plan.</div>
+        </div>
+        <button class="ptl-refresh-btn" onclick="redoPlan()">Refresh →</button>
+      </div>`;
+    }
+
+    html += `</div>`; // ptl-week
+  }
+
+  html += `</div>`; // ptl-wrap
+  return html;
+}
+
 function isDayLocked(dayId){
   const today = getToday();
   return !!(appData.sessions[today]?.[dayId]?._completed);
@@ -1945,13 +2206,13 @@ const DEFAULT_DAYS = [
     id:0, label:"MON", name:"PUSH A", type:"push", col:"var(--push)",
     focus:"Chest Primary · Shoulders · Triceps",
     exercises:[
-      {name:"Machine Chest Press",sets:"4",reps:"12–15",note:"Flat or incline — full ROM, 3s eccentric"},
-      {name:"Machine Incline Press",sets:"3",reps:"12–15",note:"Upper chest emphasis, elbows at 45°"},
-      {name:"Machine Pec Deck / Fly",sets:"3",reps:"15–20",note:"Slow squeeze, pause at peak contraction"},
-      {name:"Machine Shoulder Press",sets:"4",reps:"12–15",note:"Neutral or pronated grip, full lockout"},
-      {name:"Machine Lateral Raise",sets:"3",reps:"15–20",note:"Unilateral if available — slight forward lean"},
-      {name:"Machine Tricep Pushdown",sets:"3",reps:"15–20",note:"Elbows pinned, wrists neutral"},
-      {name:"Machine Overhead Tricep Ext.",sets:"2",reps:"15–20",note:"Long head stretch — superset w/ pushdown"},
+      {name:"Machine Chest Press",sets:"4",reps:"12–15",note:"Flat or incline — full ROM, 3s eccentric",alts:["Dumbbell Bench Press","Barbell Bench Press","Push-Ups (weighted)"]},
+      {name:"Machine Incline Press",sets:"3",reps:"12–15",note:"Upper chest emphasis, elbows at 45°",alts:["Dumbbell Incline Press","Incline Barbell Press","Cable Incline Fly"]},
+      {name:"Machine Pec Deck / Fly",sets:"3",reps:"15–20",note:"Slow squeeze, pause at peak contraction",alts:["Cable Crossover Fly","Dumbbell Fly","Resistance Band Fly"]},
+      {name:"Machine Shoulder Press",sets:"4",reps:"12–15",note:"Neutral or pronated grip, full lockout",alts:["Dumbbell Overhead Press","Barbell Military Press","Arnold Press"]},
+      {name:"Machine Lateral Raise",sets:"3",reps:"15–20",note:"Unilateral if available — slight forward lean",alts:["Dumbbell Lateral Raise","Cable Lateral Raise","Band Lateral Raise"]},
+      {name:"Machine Tricep Pushdown",sets:"3",reps:"15–20",note:"Elbows pinned, wrists neutral",alts:["Cable Rope Pushdown","Skull Crushers (EZ-Bar)","Close-Grip Push-Up"]},
+      {name:"Machine Overhead Tricep Ext.",sets:"2",reps:"15–20",note:"Long head stretch — superset w/ pushdown",alts:["Dumbbell Overhead Extension","Cable Overhead Extension","EZ-Bar Overhead Extension"]},
     ],
     stretches:[
       {icon:"🤲",name:"Doorway Chest Opener",dur:"45s each side"},
@@ -1965,13 +2226,13 @@ const DEFAULT_DAYS = [
     id:1, label:"TUE", name:"PULL A", type:"pull", col:"var(--pull)",
     focus:"Back Primary · Rear Delts · Biceps",
     exercises:[
-      {name:"Machine Lat Pulldown (Wide)",sets:"4",reps:"12–15",note:"Full stretch at top, drive elbows to hips"},
-      {name:"Machine Seated Row (Close Grip)",sets:"4",reps:"12–15",note:"Chest pad if available — squeeze mid-back"},
-      {name:"Machine Chest-Supported Row",sets:"3",reps:"12–15",note:"Removes lower back fatigue entirely"},
-      {name:"Machine Rear Delt Fly",sets:"3",reps:"15–20",note:"Arms near parallel, slow 2s contraction"},
-      {name:"Machine Pullover",sets:"3",reps:"12–15",note:"Outstanding lat stretch position"},
-      {name:"Machine Preacher Curl",sets:"3",reps:"15–20",note:"Full ROM, no swing, controlled negative"},
-      {name:"Machine Hammer / Neutral Curl",sets:"2",reps:"15–20",note:"Brachialis focus — use cable if available"},
+      {name:"Machine Lat Pulldown (Wide)",sets:"4",reps:"12–15",note:"Full stretch at top, drive elbows to hips",alts:["Wide-Grip Pull-Up","Cable Lat Pulldown","Resistance Band Pulldown"]},
+      {name:"Machine Seated Row (Close Grip)",sets:"4",reps:"12–15",note:"Chest pad if available — squeeze mid-back",alts:["Barbell Bent-Over Row","Dumbbell Row","Cable Seated Row"]},
+      {name:"Machine Chest-Supported Row",sets:"3",reps:"12–15",note:"Removes lower back fatigue entirely",alts:["Dumbbell Incline Row","Barbell Pendlay Row","Cable Face Pull Row"]},
+      {name:"Machine Rear Delt Fly",sets:"3",reps:"15–20",note:"Arms near parallel, slow 2s contraction",alts:["Dumbbell Bent-Over Fly","Cable Rear Delt Fly","Band Pull-Apart"]},
+      {name:"Machine Pullover",sets:"3",reps:"12–15",note:"Outstanding lat stretch position",alts:["Dumbbell Pullover","Cable Straight-Arm Pulldown","Resistance Band Pullover"]},
+      {name:"Machine Preacher Curl",sets:"3",reps:"15–20",note:"Full ROM, no swing, controlled negative",alts:["Dumbbell Preacher Curl","EZ-Bar Curl","Incline Dumbbell Curl"]},
+      {name:"Machine Hammer / Neutral Curl",sets:"2",reps:"15–20",note:"Brachialis focus — use cable if available",alts:["Dumbbell Hammer Curl","Cable Cross-Body Curl","Barbell Reverse Curl"]},
     ],
     stretches:[
       {icon:"🏋️",name:"Lat Hang / Overhead Lat Stretch",dur:"45s"},
@@ -1985,13 +2246,13 @@ const DEFAULT_DAYS = [
     id:2, label:"WED", name:"LEGS A", type:"legs", col:"var(--legs)",
     focus:"Quad Dominant · Glutes · Calves",
     exercises:[
-      {name:"Machine Leg Press",sets:"4",reps:"15–20",note:"Shoulder-width, full depth, 3s down"},
-      {name:"Machine Hack Squat / V-Squat",sets:"3",reps:"12–15",note:"Heels forward for quad bias"},
-      {name:"Machine Leg Extension",sets:"3",reps:"15–20",note:"Pause 1s at peak, slow eccentric"},
-      {name:"Machine Hip Abductor",sets:"3",reps:"15–20",note:"Glute med activation — full ROM"},
-      {name:"Machine Glute Kickback",sets:"3",reps:"15–20",note:"Full hip extension — squeeze hard"},
-      {name:"Machine Seated Leg Curl",sets:"3",reps:"15–20",note:"Hamstring accessory — plantarflex foot"},
-      {name:"Machine Standing Calf Raise",sets:"4",reps:"20–25",note:"Full stretch at bottom, 2s pause"},
+      {name:"Machine Leg Press",sets:"4",reps:"15–20",note:"Shoulder-width, full depth, 3s down",alts:["Barbell Back Squat","Goblet Squat","Bulgarian Split Squat"]},
+      {name:"Machine Hack Squat / V-Squat",sets:"3",reps:"12–15",note:"Heels forward for quad bias",alts:["Barbell Hack Squat","Front Squat","Smith Machine Squat"]},
+      {name:"Machine Leg Extension",sets:"3",reps:"15–20",note:"Pause 1s at peak, slow eccentric",alts:["Terminal Knee Extension (Band)","VMO Squat","Step-Up (weighted)"]},
+      {name:"Machine Hip Abductor",sets:"3",reps:"15–20",note:"Glute med activation — full ROM",alts:["Banded Abductor Walk","Side-Lying Abductor Raise","Cable Hip Abduction"]},
+      {name:"Machine Glute Kickback",sets:"3",reps:"15–20",note:"Full hip extension — squeeze hard",alts:["Cable Kickback","Donkey Kick (bodyweight)","Resistance Band Kickback"]},
+      {name:"Machine Seated Leg Curl",sets:"3",reps:"15–20",note:"Hamstring accessory — plantarflex foot",alts:["Romanian Deadlift","Nordic Curl","Dumbbell Lying Leg Curl"]},
+      {name:"Machine Standing Calf Raise",sets:"4",reps:"20–25",note:"Full stretch at bottom, 2s pause",alts:["Seated Calf Raise","Donkey Calf Raise","Single-Leg Calf Raise"]},
     ],
     stretches:[
       {icon:"🦵",name:"Standing Quad Stretch",dur:"45s each leg"},
@@ -2005,13 +2266,13 @@ const DEFAULT_DAYS = [
     id:3, label:"THU", name:"PUSH B", type:"push", col:"var(--push)",
     focus:"Shoulder Primary · Chest Accessory · Triceps",
     exercises:[
-      {name:"Machine Overhead Press (Plate-Loaded)",sets:"4",reps:"12–15",note:"Full lockout, controlled 3s descent"},
-      {name:"Machine Converging Shoulder Press",sets:"3",reps:"12–15",note:"Arc motion — front delt sweep"},
-      {name:"Machine Lateral Raise",sets:"4",reps:"15–20",note:"Medial delt focus — slight forward lean"},
-      {name:"Machine Pec Deck Low Arc",sets:"3",reps:"15–20",note:"Inner chest emphasis — arms cross"},
-      {name:"Machine Decline Press",sets:"3",reps:"12–15",note:"Lower pec sweep — elbows flared"},
-      {name:"Machine Tricep Dip / Press",sets:"3",reps:"15–20",note:"Full extension at lockout"},
-      {name:"Machine Face Pull / Reverse Fly",sets:"3",reps:"15–20",note:"Shoulder health — rear delt finish"},
+      {name:"Machine Overhead Press (Plate-Loaded)",sets:"4",reps:"12–15",note:"Full lockout, controlled 3s descent",alts:["Dumbbell Overhead Press","Barbell Military Press","Seated Arnold Press"]},
+      {name:"Machine Converging Shoulder Press",sets:"3",reps:"12–15",note:"Arc motion — front delt sweep",alts:["Seated Dumbbell Press","Landmine Press","Pike Push-Up"]},
+      {name:"Machine Lateral Raise",sets:"4",reps:"15–20",note:"Medial delt focus — slight forward lean",alts:["Dumbbell Lateral Raise","Cable Lateral Raise","Band Lateral Raise"]},
+      {name:"Machine Pec Deck Low Arc",sets:"3",reps:"15–20",note:"Inner chest emphasis — arms cross",alts:["Cable Low-to-High Fly","Dumbbell Fly (low arc)","Resistance Band Fly"]},
+      {name:"Machine Decline Press",sets:"3",reps:"12–15",note:"Lower pec sweep — elbows flared",alts:["Dumbbell Decline Press","Decline Barbell Press","Decline Push-Up"]},
+      {name:"Machine Tricep Dip / Press",sets:"3",reps:"15–20",note:"Full extension at lockout",alts:["Parallel Bar Dip","Close-Grip Bench Press","Diamond Push-Up"]},
+      {name:"Machine Face Pull / Reverse Fly",sets:"3",reps:"15–20",note:"Shoulder health — rear delt finish",alts:["Cable Face Pull (rope)","Dumbbell Reverse Fly","Band Pull-Apart"]},
     ],
     stretches:[
       {icon:"🤲",name:"Doorway Chest Opener",dur:"45s each side"},
@@ -2025,13 +2286,13 @@ const DEFAULT_DAYS = [
     id:4, label:"FRI", name:"PULL B", type:"pull", col:"var(--pull)",
     focus:"Lats & Thickness · Rear Delts · Bicep Detail",
     exercises:[
-      {name:"Machine Lat Pulldown (Neutral Grip)",sets:"4",reps:"12–15",note:"Elbows to hips — full stretch held"},
-      {name:"Machine Single-Arm Row",sets:"3",reps:"12–15",note:"Unilateral — pause at peak, no rotation"},
-      {name:"Machine T-Bar / Chest-Pad Row",sets:"3",reps:"12–15",note:"Mid-back thickness — elbows in"},
-      {name:"Machine Plate-Loaded Shrug",sets:"3",reps:"15–20",note:"Upper trap — 2s hold at top"},
-      {name:"Machine Pec Deck Reverse Fly",sets:"3",reps:"15–20",note:"Posterior delt — don't arch"},
-      {name:"Machine Wide-Grip Seated Curl",sets:"3",reps:"15–20",note:"Short head peak emphasis"},
-      {name:"Machine Incline / Low Cable Curl",sets:"2",reps:"15–20",note:"Long head stretch position"},
+      {name:"Machine Lat Pulldown (Neutral Grip)",sets:"4",reps:"12–15",note:"Elbows to hips — full stretch held",alts:["Neutral-Grip Pull-Up","Cable Neutral-Grip Pulldown","Single-Arm Lat Pulldown"]},
+      {name:"Machine Single-Arm Row",sets:"3",reps:"12–15",note:"Unilateral — pause at peak, no rotation",alts:["Dumbbell Single-Arm Row","Cable Single-Arm Row","Kettlebell Row"]},
+      {name:"Machine T-Bar / Chest-Pad Row",sets:"3",reps:"12–15",note:"Mid-back thickness — elbows in",alts:["Barbell Bent-Over Row","Dumbbell Two-Arm Row","Landmine Row"]},
+      {name:"Machine Plate-Loaded Shrug",sets:"3",reps:"15–20",note:"Upper trap — 2s hold at top",alts:["Dumbbell Shrug","Barbell Shrug","Cable Shrug"]},
+      {name:"Machine Pec Deck Reverse Fly",sets:"3",reps:"15–20",note:"Posterior delt — don't arch",alts:["Dumbbell Rear Delt Fly","Cable Reverse Fly","Band Pull-Apart"]},
+      {name:"Machine Wide-Grip Seated Curl",sets:"3",reps:"15–20",note:"Short head peak emphasis",alts:["Wide-Grip EZ-Bar Curl","Dumbbell Wide Curl","Cable Wide-Grip Curl"]},
+      {name:"Machine Incline / Low Cable Curl",sets:"2",reps:"15–20",note:"Long head stretch position",alts:["Incline Dumbbell Curl","Low Cable Curl","Spider Curl"]},
     ],
     stretches:[
       {icon:"🏋️",name:"Overhead Lat Stretch (both arms)",dur:"60s"},
@@ -2045,13 +2306,13 @@ const DEFAULT_DAYS = [
     id:5, label:"SAT", name:"LEGS B", type:"legs", col:"var(--legs)",
     focus:"Hamstring & Glute Dominant · Adductors",
     exercises:[
-      {name:"Machine Romanian Deadlift (Low Cable)",sets:"4",reps:"12–15",note:"Hip hinge — load hamstrings fully"},
-      {name:"Machine Lying Leg Curl",sets:"4",reps:"15–20",note:"Plantarflex foot for peak contraction"},
-      {name:"Machine Glute Drive / Hip Thrust",sets:"4",reps:"15–20",note:"Full hip extension — hard squeeze"},
-      {name:"Machine Leg Press (High Foot Placement)",sets:"3",reps:"15–20",note:"Hamstring & glute bias"},
-      {name:"Machine Hip Adductor",sets:"3",reps:"15–20",note:"Inner thigh — full ROM both ways"},
-      {name:"Machine Single-Leg Press",sets:"3",reps:"12–15",note:"Unilateral balance — same weight each"},
-      {name:"Machine Seated Calf Raise",sets:"4",reps:"20–25",note:"Soleus focus — heavy, full stretch"},
+      {name:"Machine Romanian Deadlift (Low Cable)",sets:"4",reps:"12–15",note:"Hip hinge — load hamstrings fully",alts:["Dumbbell Romanian Deadlift","Barbell Romanian Deadlift","Single-Leg RDL"]},
+      {name:"Machine Lying Leg Curl",sets:"4",reps:"15–20",note:"Plantarflex foot for peak contraction",alts:["Nordic Curl","Dumbbell Lying Leg Curl","Swiss Ball Leg Curl"]},
+      {name:"Machine Glute Drive / Hip Thrust",sets:"4",reps:"15–20",note:"Full hip extension — hard squeeze",alts:["Barbell Hip Thrust","Dumbbell Hip Thrust","Banded Glute Bridge"]},
+      {name:"Machine Leg Press (High Foot Placement)",sets:"3",reps:"15–20",note:"Hamstring & glute bias",alts:["Sumo Squat","Box Squat","Romanian Deadlift"]},
+      {name:"Machine Hip Adductor",sets:"3",reps:"15–20",note:"Inner thigh — full ROM both ways",alts:["Sumo Goblet Squat","Lateral Lunge","Banded Clamshell"]},
+      {name:"Machine Single-Leg Press",sets:"3",reps:"12–15",note:"Unilateral balance — same weight each",alts:["Bulgarian Split Squat","Reverse Lunge","Single-Leg Romanian Deadlift"]},
+      {name:"Machine Seated Calf Raise",sets:"4",reps:"20–25",note:"Soleus focus — heavy, full stretch",alts:["Standing Calf Raise","Donkey Calf Raise","Leg Press Calf Raise"]},
     ],
     stretches:[
       {icon:"🐕",name:"Downward Dog to Deep Lunge Flow",dur:"60s each side"},
@@ -2064,6 +2325,8 @@ const DEFAULT_DAYS = [
 ];
 
 let DAYS = DEFAULT_DAYS;
+let _programWeeks = 8;
+let _programStartDate = null; // 'YYYY-MM-DD'
 
 function syncActiveDayToToday(){
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
@@ -2077,6 +2340,13 @@ function toggle(key){
   appData.checked[key] = !appData.checked[key];
   saveData(appData);
   renderDay(); renderTabs(); updateProg();
+}
+
+function toggleAlts(key, event){
+  event.stopPropagation();
+  const panel = document.getElementById('alts-'+key);
+  const btn   = document.getElementById('altsbtn-'+key);
+  if(panel){ const open = panel.classList.toggle('open'); if(btn) btn.classList.toggle('open',open); }
 }
 
 function updateProg(){
@@ -2281,7 +2551,7 @@ function renderHist(){
   el.innerHTML = `<div class="hist-wrap">
     ${renderCalendar()}
     ${renderExerciseProgress()}
-    ${renderSessionList()}
+    ${renderProgramTimeline()}
   </div>`;
 }
 
@@ -2350,7 +2620,7 @@ function switchHist(){
   document.getElementById('histContent').scrollTop=0;
 }
 
-function buildSetLogger(dayId, exIndex, numSets, locked){
+function buildSetLogger(dayId, exIndex, numSets, locked, exName){
   const todaySets = getTodaySets(dayId, exIndex) || [];
   const lastSess  = getLastSession(dayId, exIndex);
   const dis = locked ? 'disabled' : '';
@@ -2373,7 +2643,7 @@ function buildSetLogger(dayId, exIndex, numSets, locked){
                onchange="handleSetInput(${dayId},${exIndex},${s},this)"
                onclick="event.stopPropagation()">
         <span class="set-unit">reps</span>
-        ${locked?'':'<button class="set-rest-btn" onclick="startRestTimer();event.stopPropagation()" title="Rest timer">⏱</button>'}
+        ${locked?'':'<button class="set-rest-btn" onclick="startRestTimer(0,\'REST TIMER\',\'\',\''+( exName||'').replace(/'/g,'&#39;')+'\');event.stopPropagation()" title="Rest timer">⏱</button>'}
       </div>`;
   }
 
@@ -2408,6 +2678,12 @@ function renderDay(){
   const exHTML = d.exercises.map((e,i)=>{
     const key=`e_${d.id}_${i}`, done=!!appData.checked[key];
     const numSets = parseInt(e.sets) || 3;
+    const altsBtn = (e.alts&&e.alts.length)
+      ? `<button id="altsbtn-${key}" class="alts-btn" onclick="toggleAlts('${key}',event)">ALT</button>`
+      : '';
+    const altsPanel = (e.alts&&e.alts.length)
+      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Alternatives</div>${e.alts.map(a=>`<div class="alt-item">${a}</div>`).join('')}</div>`
+      : '';
     return `
     <div class="ex-card ${done?'done':''}" style="--day-col:${d.col}">
       <div class="ex-card-top" onclick="${locked?'':` toggle('${key}')`}" style="cursor:${locked?'default':'pointer'};">
@@ -2418,13 +2694,15 @@ function renderDay(){
           <div class="ex-pills">
             <span class="pill sets">${e.sets} SETS</span>
             <span class="pill reps">${e.reps} REPS</span>
+            ${altsBtn}
           </div>
         </div>
         <div class="ex-check">
           <div class="check-box">${done?'<svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#080b0f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}</div>
         </div>
       </div>
-      ${buildSetLogger(d.id, i, numSets, locked)}
+      ${altsPanel}
+      ${buildSetLogger(d.id, i, numSets, locked, e.name)}
     </div>`;
   }).join('');
 
@@ -2433,7 +2711,7 @@ function renderDay(){
     const strSecs = parseDur(s.dur);
     const isSided = /each|per/i.test(s.dur);
     const timerBtn = strSecs
-      ? `<button class="str-timer-btn" onclick="startRestTimer(${strSecs},'STRETCH TIMER',${isSided?"'per side'":"''"});event.stopPropagation()" title="Start stretch timer">⏱</button>`
+      ? `<button class="str-timer-btn" onclick="startRestTimer(${strSecs},'STRETCH TIMER',${isSided?"'per side'":"''"},'${s.name.replace(/'/g,"\\'")}');event.stopPropagation()" title="Start stretch timer">⏱</button>`
       : '';
     return `
     <div class="str-card ${done?'done':''}" onclick="toggle('${key}')">
@@ -2572,16 +2850,23 @@ if ('serviceWorker' in navigator) {
 
   // ── REST TIMER OVERLAY HTML ──
   (function(){
+    const backdrop = document.createElement('div');
+    backdrop.id = 'restTimerBackdrop';
+    backdrop.onclick = skipRest;
+    document.body.appendChild(backdrop);
+
     const el = document.createElement('div');
     el.id = 'restTimerOverlay';
-    const r = 54, circ = +(2*Math.PI*r).toFixed(2);
+    const r = 65, circ = +(2*Math.PI*r).toFixed(2);
     el.innerHTML = `
+      <div class="rest-handle"></div>
+      <div id="restTimerCtx" class="rest-ctx"></div>
       <div id="restTimerLabel" class="rest-lbl">REST TIMER</div>
-      <div id="restTimerSub" class="rest-lbl" style="margin-top:-10px;font-size:8px;opacity:0.6;min-height:10px;"></div>
+      <div id="restTimerSub" class="rest-lbl" style="margin-top:-6px;font-size:8px;opacity:0.6;min-height:10px;"></div>
       <div class="rest-ring">
-        <svg width="130" height="130" viewBox="0 0 130 130">
-          <circle class="rest-ring-bg" cx="65" cy="65" r="${r}"/>
-          <circle id="restArc" class="rest-ring-arc" cx="65" cy="65" r="${r}"
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <circle class="rest-ring-bg" cx="75" cy="75" r="${r}"/>
+          <circle id="restArc" class="rest-ring-arc" cx="75" cy="75" r="${r}"
                   stroke-dasharray="${circ}" stroke-dashoffset="0"/>
         </svg>
         <div id="restDisplay" class="rest-ring-time">1:30</div>
