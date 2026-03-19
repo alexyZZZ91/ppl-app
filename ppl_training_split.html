@@ -1269,6 +1269,92 @@ body{
   line-height:2;
 }
 
+/* ── PROGRAM TIMELINE ── */
+.ptl-wrap{ padding:0 16px 24px; }
+.ptl-week{ margin-bottom:2px; }
+.ptl-week-hdr{
+  display:flex;align-items:center;gap:8px;
+  padding:14px 0 7px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:2px;
+}
+.ptl-week.current>.ptl-week-hdr{ border-bottom-color:var(--border2); }
+.ptl-week-num{
+  font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--white);
+}
+.ptl-week-range{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted2);flex:1;
+}
+.ptl-week-badge{
+  font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1.5px;
+  padding:2px 7px;border-radius:3px;
+  background:rgba(232,240,74,.08);border:1px solid rgba(232,240,74,.25);color:var(--accent);
+}
+.ptl-day{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 2px;
+  border-bottom:1px solid rgba(30,42,56,.6);
+}
+.ptl-day:last-of-type{ border-bottom:none; }
+.ptl-status-icon{
+  width:18px;flex-shrink:0;
+  font-family:'DM Mono',monospace;font-size:11px;text-align:center;
+}
+.ptl-day.done   .ptl-status-icon{ color:var(--accent); }
+.ptl-day.today  .ptl-status-icon{ color:var(--accent2); }
+.ptl-day.missed .ptl-status-icon{ color:var(--muted2); }
+.ptl-day.future .ptl-status-icon{ color:var(--border2); }
+.ptl-day-info{ flex:1;display:flex;align-items:center;gap:8px;min-width:0; }
+.ptl-day-date{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;
+  color:var(--muted);flex-shrink:0;width:38px;
+}
+.ptl-day-name{
+  font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ptl-day-name.push{ color:var(--push); }
+.ptl-day-name.pull{ color:var(--pull); }
+.ptl-day-name.legs{ color:var(--legs); }
+.ptl-day.future .ptl-day-name,
+.ptl-day.missed .ptl-day-name{ color:var(--muted); }
+.ptl-day-meta{ display:flex;align-items:center;gap:6px;flex-shrink:0; }
+.ptl-sets{
+  font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;
+}
+.ptl-badge{
+  font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1px;
+  padding:2px 6px;border-radius:3px;text-transform:uppercase;
+}
+.ptl-badge.done  { background:rgba(232,240,74,.1);  color:var(--accent);  border:1px solid rgba(232,240,74,.25); }
+.ptl-badge.today { background:rgba(74,240,184,.1);  color:var(--accent2); border:1px solid rgba(74,240,184,.25); }
+.ptl-badge.missed{ background:rgba(74,96,112,.1);   color:var(--muted);   border:1px solid var(--border); }
+/* Program Refresh card */
+.ptl-refresh{
+  margin:14px 0 4px;padding:16px;
+  border-radius:10px;
+  border:1px solid rgba(232,240,74,.2);
+  background:rgba(232,240,74,.03);
+  display:flex;align-items:center;gap:14px;
+}
+.ptl-refresh-icon{ font-size:26px;flex-shrink:0; }
+.ptl-refresh-body{ flex:1; }
+.ptl-refresh-title{
+  font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.5px;
+  color:var(--accent);margin-bottom:3px;
+}
+.ptl-refresh-sub{
+  font-size:11px;color:var(--muted);font-weight:300;line-height:1.4;
+}
+.ptl-refresh-btn{
+  flex-shrink:0;
+  background:var(--accent);color:#080b0f;
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1px;
+  padding:9px 14px;border:none;border-radius:6px;cursor:pointer;
+  transition:opacity .15s;
+}
+.ptl-refresh-btn:hover{ opacity:.85; }
+
 /* ── RESET ── */
 .reset-area{padding:0 16px 8px;}
 
@@ -1557,6 +1643,9 @@ async function _finishSignIn(user, profile){
       `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
       `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
     el.classList.add('visible');
+    // Load program timeline metadata
+    if(profile?.program_weeks)      _programWeeks     = profile.program_weeks;
+    if(profile?.program_start_date) _programStartDate = profile.program_start_date;
     // Update subtitle with profile settings
     const sub = document.getElementById('hdrSub');
     if(sub && profile){
@@ -1755,7 +1844,7 @@ document.addEventListener('visibilitychange', async ()=>{
 /* ── ONBOARDING ── */
 const EDGE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/hyper-responder';
 
-let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, injuries:[], otherInjury:'' };
+let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, programWeeks:8, injuries:[], otherInjury:'' };
 
 const OB_STEPS = [
   { key:'experience', title:'Experience Level', sub:'How long have you been training consistently?', type:'card',
@@ -1781,6 +1870,8 @@ const OB_STEPS = [
     ]},
   { key:'daysPerWeek', title:'Days Per Week', sub:'How many days can you train?', type:'pill',
     options:[{value:3,label:'3'},{value:4,label:'4'},{value:5,label:'5'},{value:6,label:'6'}]},
+  { key:'programWeeks', title:'Program Duration', sub:'How many weeks before we prompt you to reassess and refresh your plan?', type:'pill',
+    options:[{value:4,label:'4 wks'},{value:6,label:'6 wks'},{value:8,label:'8 wks'},{value:10,label:'10 wks'}]},
   { key:'injuries', title:'Any Limitations?', sub:'Select areas to avoid. (Optional)', type:'check',
     options:[
       {value:'Knees',       label:'Knees'},
@@ -1792,7 +1883,7 @@ const OB_STEPS = [
 ];
 
 function showOnboarding(){
-  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, injuries:[], otherInjury:'' };
+  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, programWeeks:8, injuries:[], otherInjury:'' };
   document.getElementById('onboardingOverlay').style.display='flex';
   _renderObStep();
 }
@@ -1904,11 +1995,13 @@ async function obGenerate(){
     if(!res.ok||json.error) throw new Error(json.error||`HTTP ${res.status}: ${JSON.stringify(json)}`);
     const plan = json.plan;
     // Insert profile row; if it already exists, update instead
+    const today = getToday();
     const profileData = {
       user_id:_currentUser.id,
       experience:_ob.experience, equipment:_ob.equipment,
       goal:_ob.goal, days_per_week:_ob.daysPerWeek,
       injuries:baseInjuries, plan,
+      program_weeks:_ob.programWeeks, program_start_date:today,
     };
     const { error: insertErr } = await _sb.from('user_profiles').insert(profileData);
     if(insertErr){
@@ -1917,6 +2010,7 @@ async function obGenerate(){
         experience:_ob.experience, equipment:_ob.equipment,
         goal:_ob.goal, days_per_week:_ob.daysPerWeek,
         injuries:baseInjuries, plan,
+        program_weeks:_ob.programWeeks, program_start_date:today,
       }).eq('user_id',_currentUser.id);
       if(updateErr) throw new Error(updateErr.message);
     }
@@ -1926,6 +2020,8 @@ async function obGenerate(){
       days_per_week: _ob.daysPerWeek,
       equipment: _ob.equipment,
       goal: _ob.goal,
+      program_weeks: _ob.programWeeks,
+      program_start_date: today,
     });
   }catch(err){
     document.getElementById('onboardingOverlay').innerHTML = `
@@ -1936,7 +2032,7 @@ async function obGenerate(){
         <div class="ob-load-sub" style="margin-bottom:24px">${err.message}</div>
         <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
           <button class="ob-btn-next" style="flex:none" onclick="obGenerate()">Try Again</button>
-          <button class="ob-btn-back" onclick="_ob.step=4;_renderObStep()">← Go Back</button>
+          <button class="ob-btn-back" onclick="_ob.step=OB_STEPS.length-1;_renderObStep()">← Go Back</button>
         </div>
       </div>`;
   }
@@ -1999,6 +2095,95 @@ function formatDate(iso){
   const [y,m,d] = iso.split('-');
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[parseInt(m)-1]} ${parseInt(d)}`;
+}
+
+function addDays(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+function renderProgramTimeline(){
+  if(!_programStartDate) return renderSessionList();
+  const today  = getToday();
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const LABELS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+
+  let html = `<div class="ptl-wrap">
+    <div class="sess-section-title" style="padding-top:16px">${_programWeeks}-WEEK PROGRAM</div>`;
+
+  for(let w=0; w<_programWeeks; w++){
+    const weekStartStr = addDays(_programStartDate, w*7);
+    const weekEndStr   = addDays(_programStartDate, w*7+6);
+    const isLastWeek   = w===_programWeeks-1;
+
+    // Check if this week has any activity (to collapse far-future empty weeks visually via CSS)
+    const hasActivity = Array.from({length:7},(_,d)=>addDays(_programStartDate,w*7+d))
+      .some(ds=>appData.sessions[ds]);
+    const isCurrent = weekStartStr<=today && today<=weekEndStr;
+
+    html += `<div class="ptl-week${isCurrent?' current':''}${isLastWeek?' final':''}">
+      <div class="ptl-week-hdr">
+        <span class="ptl-week-num">WEEK ${w+1}</span>
+        <span class="ptl-week-range">${formatDate(weekStartStr)} – ${formatDate(weekEndStr)}</span>
+        ${isLastWeek?'<span class="ptl-week-badge">FINAL</span>':''}
+      </div>`;
+
+    for(let d=0; d<7; d++){
+      const dateStr  = addDays(_programStartDate, w*7+d);
+      const dow      = new Date(dateStr+'T00:00:00').getDay();
+      const dayLabel = LABELS[dow];
+      const dayDef   = DAYS.find(day=>day.label===dayLabel);
+      if(!dayDef) continue;
+
+      const sessionData = appData.sessions[dateStr]?.[dayDef.id];
+      const completed   = !!sessionData?._completed;
+      const isToday     = dateStr===today;
+      const missed      = dateStr<today && !completed && !isToday;
+      const isFuture    = dateStr>today;
+
+      let setsLogged=0;
+      if(sessionData){
+        dayDef.exercises.forEach((_,i)=>{
+          const sets=sessionData[i];
+          if(sets&&Array.isArray(sets)) setsLogged+=sets.filter(s=>s&&(s.wt||s.reps)).length;
+        });
+      }
+
+      const status = completed?'done':isToday?'today':missed?'missed':'future';
+      const icon   = completed?'✓':isToday?'▶':missed?'○':'·';
+      const [,mo,dy] = dateStr.split('-');
+      const dateLabel = `${MONTHS[parseInt(mo)-1]} ${parseInt(dy)}`;
+
+      html += `<div class="ptl-day ${status}">
+        <div class="ptl-status-icon">${icon}</div>
+        <div class="ptl-day-info">
+          <span class="ptl-day-date">${dateLabel}</span>
+          <span class="ptl-day-name ${dayDef.type}">${dayDef.name}</span>
+        </div>
+        <div class="ptl-day-meta">
+          ${completed?`<span class="ptl-sets">${setsLogged} SETS</span>`:''}
+          ${status!=='future'?`<span class="ptl-badge ${status}">${completed?'DONE':isToday?'TODAY':'MISSED'}</span>`:''}
+        </div>
+      </div>`;
+    }
+
+    if(isLastWeek){
+      html += `<div class="ptl-refresh">
+        <div class="ptl-refresh-icon">🔄</div>
+        <div class="ptl-refresh-body">
+          <div class="ptl-refresh-title">Program Refresh</div>
+          <div class="ptl-refresh-sub">You've completed your ${_programWeeks}-week block — time to reassess, progress your weights, and refresh your plan.</div>
+        </div>
+        <button class="ptl-refresh-btn" onclick="redoPlan()">Refresh →</button>
+      </div>`;
+    }
+
+    html += `</div>`; // ptl-week
+  }
+
+  html += `</div>`; // ptl-wrap
+  return html;
 }
 
 function isDayLocked(dayId){
@@ -2140,6 +2325,8 @@ const DEFAULT_DAYS = [
 ];
 
 let DAYS = DEFAULT_DAYS;
+let _programWeeks = 8;
+let _programStartDate = null; // 'YYYY-MM-DD'
 
 function syncActiveDayToToday(){
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
@@ -2364,7 +2551,7 @@ function renderHist(){
   el.innerHTML = `<div class="hist-wrap">
     ${renderCalendar()}
     ${renderExerciseProgress()}
-    ${renderSessionList()}
+    ${renderProgramTimeline()}
   </div>`;
 }
 
