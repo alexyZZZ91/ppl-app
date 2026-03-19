@@ -1036,6 +1036,20 @@ body{
   opacity:.7;
 }
 
+/* Planned program days (not yet trained) */
+.cal-cell.planned{ color:var(--muted2); }
+.cal-cell.planned .cal-dot{ opacity:.3; }
+.cal-cell.planned.push .cal-dot{ background:var(--push); }
+.cal-cell.planned.pull .cal-dot{ background:var(--pull); }
+.cal-cell.planned.legs .cal-dot{ background:var(--legs); }
+/* Program end / refresh day */
+.cal-cell.prog-end{
+  border:1px solid rgba(232,240,74,.35);
+  border-radius:6px;
+  color:var(--accent);
+}
+.cal-cell.prog-end .cal-dot{ background:var(--accent); opacity:.6; }
+
 /* ── Session list ── */
 .sess-section{
   padding:16px 16px 0;
@@ -1871,7 +1885,7 @@ const OB_STEPS = [
   { key:'daysPerWeek', title:'Days Per Week', sub:'How many days can you train?', type:'pill',
     options:[{value:3,label:'3'},{value:4,label:'4'},{value:5,label:'5'},{value:6,label:'6'}]},
   { key:'programWeeks', title:'Program Duration', sub:'How many weeks before we prompt you to reassess and refresh your plan?', type:'pill',
-    options:[{value:4,label:'4 wks'},{value:6,label:'6 wks'},{value:8,label:'8 wks'},{value:10,label:'10 wks'}]},
+    options:[{value:4,label:'4'},{value:6,label:'6'},{value:8,label:'8'},{value:10,label:'10'}]},
   { key:'injuries', title:'Any Limitations?', sub:'Select areas to avoid. (Optional)', type:'check',
     options:[
       {value:'Knees',       label:'Knees'},
@@ -2420,11 +2434,34 @@ function renderCalendar(){
     if(y!==calYear || m-1!==calMonth) continue;
     const summaries = getSessionSummary(date);
     if(!summaries.length) continue;
-    // determine colour from day types trained
     const types = [...new Set(summaries.map(s=>s.day.type))];
     const type = types.length>1 ? 'multi' : types[0];
     const completed = summaries.every(s=>s.completed);
     trainedMap[date] = {type, completed};
+  }
+
+  // Build program plan overlay — upcoming/missed training days + program end marker
+  const planMap = {};
+  if(_programStartDate){
+    const progEndStr = addDays(_programStartDate, _programWeeks*7-1);
+    const CAL_LABELS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    for(let w=0; w<_programWeeks; w++){
+      for(let d=0; d<7; d++){
+        const ds = addDays(_programStartDate, w*7+d);
+        const [y,m] = ds.split('-').map(Number);
+        if(y!==calYear || m-1!==calMonth) continue;
+        if(trainedMap[ds]) continue; // session data takes priority
+        const dayLabel = CAL_LABELS[new Date(ds+'T00:00:00').getDay()];
+        const dayDef   = DAYS.find(day=>day.label===dayLabel);
+        if(!dayDef) continue;
+        planMap[ds] = { type:dayDef.type, isEnd: ds===progEndStr };
+      }
+    }
+    // Mark prog-end even if it falls on a rest day
+    const [ey,em] = progEndStr.split('-').map(Number);
+    if(ey===calYear && em-1===calMonth && !planMap[progEndStr] && !trainedMap[progEndStr]){
+      planMap[progEndStr] = { type:'end', isEnd:true };
+    }
   }
 
   const dayLabels = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -2438,17 +2475,24 @@ function renderCalendar(){
     </div>
     <div class="cal-grid">`;
   dayLabels.forEach(l=>{ html+=`<div class="cal-day-label">${l}</div>`; });
-  // Empty cells before month starts
   for(let i=0;i<firstDay;i++) html+=`<div class="cal-cell"></div>`;
   for(let day=1;day<=daysInMonth;day++){
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const isToday = dateStr===today;
     const info = trainedMap[dateStr];
+    const plan = planMap[dateStr];
     let cls = 'cal-cell';
     if(isToday) cls+=' today';
-    if(info){ cls+=` trained ${info.type}`; if(info.completed) cls+=' completed-day'; }
+    if(info){
+      cls+=` trained ${info.type}`;
+      if(info.completed) cls+=' completed-day';
+    } else if(plan){
+      cls+=` planned ${plan.type}`;
+      if(plan.isEnd) cls+=' prog-end';
+    }
     const onclick = info ? `onclick="calDayClick('${dateStr}')"` : '';
-    html+=`<div class="${cls}" ${onclick}>${day}${info?'<span class="cal-dot"></span>':''}</div>`;
+    const dot = info ? '<span class="cal-dot"></span>' : plan ? '<span class="cal-dot"></span>' : '';
+    html+=`<div class="${cls}" ${onclick}>${day}${dot}</div>`;
   }
   html+=`</div></div>`;
   return html;
