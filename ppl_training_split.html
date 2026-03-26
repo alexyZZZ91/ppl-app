@@ -2569,6 +2569,7 @@ function syncActiveDayToToday(){
   activeDay = DAYS[0].id;
 }
 let activeDay = 0;
+let activeView = 'day'; // 'day' | 'hist' | 'rest' — declared here so syncActiveDayToToday can write it
 syncActiveDayToToday();
 
 function toggle(key){
@@ -2884,8 +2885,6 @@ function toggleSessCard(date, dayId){
   if(el) el.classList.toggle('open');
 }
 
-// activeView: 'day' | 'hist' | 'rest'
-let activeView = 'day';
 // For history calendar nav
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
