@@ -2346,7 +2346,8 @@ function syncActiveDayToToday(){
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
   const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
   if(i>=0){ activeDay = DAYS[i].id; return; }
-  // Fallback: last completed session → next day in rotation (AI plans)
+  // Fallback: last completed session → same day if today, next day if prior (AI plans)
+  const today = getToday();
   const dates = Object.keys(appData.sessions||{}).sort();
   for(let di=dates.length-1; di>=0; di--){
     const sess = appData.sessions[dates[di]];
@@ -2354,7 +2355,13 @@ function syncActiveDayToToday(){
     if(completedIds.length){
       const lastId = +completedIds[completedIds.length-1];
       const lastIdx = DAYS.findIndex(d=>d.id===lastId);
-      if(lastIdx>=0){ activeDay = DAYS[(lastIdx+1)%DAYS.length].id; return; }
+      if(lastIdx>=0){
+        // If completed today, stay on that day (show it locked/done)
+        // If completed on a previous day, advance to the next
+        const advance = dates[di] !== today;
+        activeDay = DAYS[advance ? (lastIdx+1)%DAYS.length : lastIdx].id;
+        return;
+      }
     }
   }
   // Last resort: rotation from program start date
