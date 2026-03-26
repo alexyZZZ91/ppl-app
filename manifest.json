@@ -1,7 +1,7 @@
 {
-  "name": "PPL Split · Training Tracker",
-  "short_name": "PPL Split",
-  "description": "6-Day Push/Pull/Legs machine training tracker with per-set weight and rep logging",
+  "name": "Plan PPL · AI Training",
+  "short_name": "Plan PPL",
+  "description": "AI-generated Push/Pull/Legs training programs personalised to you",
   "start_url": "./ppl_training_split.html",
   "scope": "./",
   "display": "standalone",
