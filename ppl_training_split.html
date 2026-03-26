@@ -180,8 +180,14 @@ body{
 .day-btn.push.active{color:var(--push);border-bottom-color:var(--push);}
 .day-btn.pull.active{color:var(--pull);border-bottom-color:var(--pull);}
 .day-btn.legs.active{color:var(--legs);border-bottom-color:var(--legs);}
+.day-btn.rest.active{color:var(--muted);border-bottom-color:var(--muted);}
 .day-btn.hist.active{color:var(--accent2);border-bottom-color:var(--accent2);}
 .day-btn.hist .d-dot{background:var(--accent2);}
+.day-btn.rest .d-dot{background:var(--muted);}
+.day-btn.today::after{
+  content:'';position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.7;
+}
 
 .day-btn .d-num{
   font-family:'Bebas Neue',sans-serif;
@@ -955,6 +961,54 @@ body{
 }
 .hdr-user.visible{ display:block; }
 
+/* ── REST DAY ── */
+.rest-hero{
+  padding:32px 20px 24px;text-align:center;
+  background:linear-gradient(160deg,rgba(255,255,255,.03) 0%,transparent 100%);
+  border-bottom:1px solid var(--border);
+}
+.rest-emoji{ font-size:56px;line-height:1;margin-bottom:12px; }
+.rest-title{
+  font-family:'Bebas Neue',sans-serif;font-size:36px;
+  color:var(--white);letter-spacing:2px;margin-bottom:6px;
+}
+.rest-subtitle{
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--muted);letter-spacing:1px;margin-bottom:20px;
+}
+.rest-quote{
+  font-family:'DM Sans',sans-serif;font-size:15px;font-style:italic;
+  color:var(--white);line-height:1.55;max-width:320px;margin:0 auto;
+  opacity:.85;
+}
+.rest-week-stats{
+  display:flex;gap:12px;padding:20px;justify-content:center;
+}
+.rest-stat-card{
+  flex:1;max-width:130px;background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:16px 12px;text-align:center;
+}
+.rest-stat-val{
+  font-family:'Bebas Neue',sans-serif;font-size:36px;
+  color:var(--accent);line-height:1;margin-bottom:4px;
+}
+.rest-stat-lbl{
+  font-family:'DM Mono',monospace;font-size:8px;
+  color:var(--muted);letter-spacing:2px;text-transform:uppercase;
+}
+.rest-tips{padding:0 20px 32px;}
+.rest-tips-head{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--muted);letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:12px;
+}
+.rest-tip{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px 0;border-bottom:1px solid var(--border);
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--white);line-height:1.5;
+}
+.rest-tip-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+
 /* ── HISTORY TAB ── */
 .hist-wrap{ padding:0 0 40px; }
 
@@ -1722,7 +1776,8 @@ async function _finishSignIn(user, profile){
     await loadDataFromCloud();
     syncActiveDayToToday(); // runs after data load so last-completed session is available
     try{
-      renderTabs(); renderDay(); updateProg();
+      renderTabs(); updateProg();
+      activeView==='rest' ? renderRest() : renderDay();
     }catch(renderErr){
       console.warn('renderDay failed with current plan, falling back to default:', renderErr);
       DAYS = DEFAULT_DAYS;
@@ -2480,10 +2535,12 @@ let _programWeeks = 8;
 let _programStartDate = null; // 'YYYY-MM-DD'
 
 function syncActiveDayToToday(){
+  // Sunday → rest day
+  if(new Date().getDay()===0){ activeView='rest'; activeDay=DAYS[0].id; return; }
   // Primary: label-based matching (default plan has MON/TUE/WED labels)
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
   const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
-  if(i>=0){ activeDay = DAYS[i].id; return; }
+  if(i>=0){ activeView='day'; activeDay = DAYS[i].id; return; }
   // Fallback: last completed session → same day if today, next day if prior (AI plans)
   const today = getToday();
   const dates = Object.keys(appData.sessions||{}).sort();
@@ -2827,7 +2884,7 @@ function toggleSessCard(date, dayId){
   if(el) el.classList.toggle('open');
 }
 
-// activeView: 'day' | 'hist'
+// activeView: 'day' | 'hist' | 'rest'
 let activeView = 'day';
 // For history calendar nav
 let calYear = new Date().getFullYear();
@@ -2835,24 +2892,37 @@ let calMonth = new Date().getMonth();
 // Selected exercise for progress table
 let progExKey = null;
 
+const _DOW_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
 function renderTabs(){
-  const dayBtns = DAYS.map(d=>`
-    <button class="day-btn ${d.type} ${activeView==='day'&&d.id===activeDay?'active':''} ${isDayComplete(d)?'completed':''}"
-      onclick="switchDay(${d.id})">
-      <span class="d-num">${d.label}</span>
-      <span class="d-type">${d.type}</span>
+  // Today's 0-based index in our MON=0..SUN=6 system
+  const jsDow = new Date().getDay(); // 0=Sun,1=Mon..6=Sat
+  const todayIdx = jsDow === 0 ? 6 : jsDow - 1;
+
+  const weekBtns = _DOW_LABELS.map((lbl, i) => {
+    const isRest = i === 6;
+    const day    = isRest ? null : DAYS[i];
+    const type   = isRest ? 'rest' : (day?.type || 'push');
+    const isActive = isRest ? activeView==='rest'
+                            : (activeView==='day' && day && day.id===activeDay);
+    const isDone   = !isRest && day && isDayComplete(day);
+    const isToday  = i === todayIdx;
+    const onclick  = isRest ? 'switchRest()' : `switchDay(${day?.id??i})`;
+    return `<button class="day-btn ${type}${isActive?' active':''}${isDone?' completed':''}${isToday?' today':''}" onclick="${onclick}">
+      <span class="d-num">${lbl}</span>
+      <span class="d-type">${isRest?'rest':type}</span>
       <span class="d-dot"></span>
-      <span class="done-pip"></span>
-    </button>
-  `).join('');
-  const histBtn = `
-    <button class="day-btn hist ${activeView==='hist'?'active':''}" onclick="switchHist()">
+      <span class="done-pip"${isRest?' style="display:none"':''}></span>
+    </button>`;
+  }).join('');
+
+  const histBtn = `<button class="day-btn hist ${activeView==='hist'?'active':''}" onclick="switchHist()">
       <span class="d-num" style="font-size:16px;padding-top:3px;">📋</span>
       <span class="d-type">log</span>
       <span class="d-dot"></span>
       <span class="done-pip" style="display:none"></span>
     </button>`;
-  document.getElementById('dayStrip').innerHTML = dayBtns + histBtn;
+  document.getElementById('dayStrip').innerHTML = weekBtns + histBtn;
 }
 
 function switchDay(id){
@@ -2869,6 +2939,86 @@ function switchHist(){
   document.getElementById('histContent').style.display='';
   renderTabs(); renderHist();
   document.getElementById('histContent').scrollTop=0;
+}
+
+function switchRest(){
+  activeView='rest';
+  document.getElementById('mainContent').style.display='';
+  document.getElementById('histContent').style.display='none';
+  renderTabs(); renderRest();
+  document.getElementById('mainContent').scrollTop=0;
+}
+
+function _getWeekStats(){
+  const today = new Date();
+  const jsDow = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (jsDow===0 ? 6 : jsDow-1));
+  let sessCount=0, totalSets=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(monday); d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    const sess=appData.sessions?.[ds];
+    if(!sess) continue;
+    Object.values(sess).forEach(dayData=>{
+      if(!dayData?._completed) return;
+      sessCount++;
+      Object.keys(dayData).filter(k=>!k.startsWith('_')).forEach(exIdx=>{
+        const sets=dayData[exIdx];
+        if(Array.isArray(sets)) totalSets+=sets.filter(s=>s&&(s.wt||s.reps)).length;
+      });
+    });
+  }
+  return {sessCount, totalSets};
+}
+
+const _REST_QUOTES = [
+  "Rest is not a reward — it's part of the program. You've earned today.",
+  "Recovery is where the gains actually happen. Your muscles are growing right now.",
+  "The best athletes in the world take rest days. You're in good company.",
+  "Showing up six days a week is discipline most people only dream of.",
+  "Progress isn't just made in the gym. It's made while you sleep, eat, and recover.",
+  "You didn't come this far to only come this far. Rest up, the work continues tomorrow.",
+  "Consistency over weeks builds the body you want. You're doing the work.",
+  "Every rep you've put in this week is compounding. Trust the process.",
+];
+const _REST_TIPS = [
+  {icon:"💧", text:"Aim for at least 2.5L of water today — hydration accelerates muscle repair."},
+  {icon:"🥩", text:"Keep protein intake high even on rest days. Your muscles are still rebuilding."},
+  {icon:"😴", text:"7–9 hours of sleep is where the majority of your recovery happens. Prioritise it."},
+  {icon:"🚶", text:"A light walk or gentle movement keeps blood flowing without adding stress."},
+  {icon:"🧘", text:"Take 5 minutes to stretch or foam roll — reduces soreness for tomorrow."},
+];
+
+function renderRest(){
+  const streak = getTrainingStreak();
+  const {sessCount, totalSets} = _getWeekStats();
+  const quote  = _REST_QUOTES[new Date().getDay() % _REST_QUOTES.length];
+  document.getElementById('mainContent').innerHTML = `
+    <div class="rest-hero">
+      <div class="rest-emoji">🌟</div>
+      <div class="rest-title">Rest Day</div>
+      <div class="rest-subtitle">SUNDAY · ACTIVE RECOVERY</div>
+      <div class="rest-quote">"${quote}"</div>
+    </div>
+    <div class="rest-week-stats">
+      <div class="rest-stat-card">
+        <div class="rest-stat-val">${sessCount}</div>
+        <div class="rest-stat-lbl">Sessions<br>This Week</div>
+      </div>
+      <div class="rest-stat-card">
+        <div class="rest-stat-val">${totalSets}</div>
+        <div class="rest-stat-lbl">Sets<br>Logged</div>
+      </div>
+      ${streak>0?`<div class="rest-stat-card">
+        <div class="rest-stat-val" style="color:#ff9f1c">${streak}🔥</div>
+        <div class="rest-stat-lbl">Day<br>Streak</div>
+      </div>`:''}
+    </div>
+    <div class="rest-tips">
+      <div class="rest-tips-head">Recovery Checklist</div>
+      ${_REST_TIPS.map(t=>`<div class="rest-tip"><div class="rest-tip-icon">${t.icon}</div><div>${t.text}</div></div>`).join('')}
+    </div>`;
 }
 
 function buildSetLogger(dayId, exIndex, numSets, locked, exName){
