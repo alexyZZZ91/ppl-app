@@ -1619,7 +1619,7 @@ let appData = { checked:{}, sessions:{} };
 function normalizePlan(plan){
   return plan.map((d,i)=>({
     id:        d.id ?? i,
-    label:     d.label || `Day ${i+1}`,
+    label:     (d.label || `Day ${i+1}`).toUpperCase(),
     name:      d.name  || d.label || `Day ${i+1}`,
     tag:       (d.tag  || 'PUSH').toUpperCase(),
     type:      d.type  || (d.tag || 'push').toLowerCase(),
@@ -2344,13 +2344,17 @@ let _programStartDate = null; // 'YYYY-MM-DD'
 
 function syncActiveDayToToday(){
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
-  const i = DAYS.findIndex(d=>d.label===lbl);
-  activeDay = i>=0 ? i : 0;
+  const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
+  activeDay = i>=0 ? DAYS[i].id : DAYS[0].id;
 }
 let activeDay = 0;
 syncActiveDayToToday();
 
 function toggle(key){
+  const today = getToday();
+  // Reset all checked state whenever the date rolls over
+  if(appData.checkedDate !== today){ appData.checked = {}; }
+  appData.checkedDate = today;
   appData.checked[key] = !appData.checked[key];
   saveData(appData);
   renderDay(); renderTabs(); updateProg();
@@ -2364,10 +2368,12 @@ function toggleAlts(key, event){
 }
 
 function updateProg(){
+  const checkedFresh = appData.checkedDate === getToday();
   let total=0,done=0;
   DAYS.forEach(d=>{
-    d.exercises.forEach((_,i)=>{ total++; if(appData.checked[`e_${d.id}_${i}`]) done++; });
-    d.stretches.forEach((_,i)=>{ total++; if(appData.checked[`s_${d.id}_${i}`]) done++; });
+    const lk = isDayLocked(d.id);
+    d.exercises.forEach((_,i)=>{ total++; if(lk||(checkedFresh&&appData.checked[`e_${d.id}_${i}`])) done++; });
+    d.stretches.forEach((_,i)=>{ total++; if(lk||(checkedFresh&&appData.checked[`s_${d.id}_${i}`])) done++; });
   });
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('progFill').style.width = pct+'%';
@@ -2375,6 +2381,9 @@ function updateProg(){
 }
 
 function isDayComplete(d){
+  if(isDayLocked(d.id)) return true;
+  const checkedFresh = appData.checkedDate === getToday();
+  if(!checkedFresh) return false;
   return d.exercises.every((_,i)=>appData.checked[`e_${d.id}_${i}`]) &&
          d.stretches.every((_,i)=>appData.checked[`s_${d.id}_${i}`]);
 }
@@ -2717,10 +2726,14 @@ function handleSetInput(dayId, exIndex, setIndex, changedEl){
 }
 
 function renderDay(){
-  const d = DAYS[activeDay];
+  const d = DAYS.find(d=>d.id===activeDay) || DAYS[0];
   const locked = isDayLocked(d.id);
+  const today = getToday();
+  const checkedFresh = appData.checkedDate === today;
   const exHTML = d.exercises.map((e,i)=>{
-    const key=`e_${d.id}_${i}`, done=!!appData.checked[key];
+    const key=`e_${d.id}_${i}`;
+    // Locked day → all exercises visually done; unlocked → only count today's ticks
+    const done = locked || (checkedFresh && !!appData.checked[key]);
     const numSets = parseInt(e.sets) || 3;
     const altsBtn = (e.alts&&e.alts.length)
       ? `<button id="altsbtn-${key}" class="alts-btn" onclick="toggleAlts('${key}',event)">ALT</button>`
