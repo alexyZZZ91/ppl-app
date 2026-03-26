@@ -1641,11 +1641,10 @@ async function loadProfile(){
 
 async function _finishSignIn(user, profile){
   try{
-    // Load program metadata first so syncActiveDayToToday can use rotation-based matching
     if(profile?.program_weeks)      _programWeeks     = profile.program_weeks;
     if(profile?.program_start_date) _programStartDate = profile.program_start_date;
-    syncActiveDayToToday();
     await loadDataFromCloud();
+    syncActiveDayToToday(); // runs after data load so last-completed session is available
     try{
       renderTabs(); renderDay(); updateProg();
     }catch(renderErr){
@@ -2347,7 +2346,18 @@ function syncActiveDayToToday(){
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
   const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
   if(i>=0){ activeDay = DAYS[i].id; return; }
-  // Fallback: rotation-based using program start date (AI plans)
+  // Fallback: last completed session → next day in rotation (AI plans)
+  const dates = Object.keys(appData.sessions||{}).sort();
+  for(let di=dates.length-1; di>=0; di--){
+    const sess = appData.sessions[dates[di]];
+    const completedIds = Object.keys(sess).filter(k=>sess[k]?._completed);
+    if(completedIds.length){
+      const lastId = +completedIds[completedIds.length-1];
+      const lastIdx = DAYS.findIndex(d=>d.id===lastId);
+      if(lastIdx>=0){ activeDay = DAYS[(lastIdx+1)%DAYS.length].id; return; }
+    }
+  }
+  // Last resort: rotation from program start date
   if(_programStartDate){
     const start = new Date(_programStartDate+'T00:00:00');
     const now   = new Date(getToday()+'T00:00:00');
