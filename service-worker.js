@@ -7,7 +7,7 @@
 // The activate handler will automatically purge the old cache.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_NAME = 'ppl-split-v27';
+const CACHE_NAME = 'ppl-split-v28';
 
 const PRECACHE_URLS = [
   './ppl_training_split.html',
@@ -63,6 +63,12 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Supabase & other external API calls — always network, never cache
+  if (url.hostname.endsWith('supabase.co')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   // Everything else: Cache-First (app shell, icons, manifest)
   event.respondWith(
     caches.match(event.request)
@@ -83,5 +89,17 @@ self.addEventListener('fetch', event => {
           return response;
         });
       })
+  );
+});
+
+// ── Notification click: focus/open the app ────────────────────────────────────
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(clients => {
+      const existing = clients.find(c => c.url.includes('ppl_training_split'));
+      if(existing) return existing.focus();
+      return self.clients.openWindow('./ppl_training_split.html');
+    })
   );
 });
