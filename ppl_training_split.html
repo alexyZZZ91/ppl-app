@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>PPL Split · Training Tracker</title>
+<title>Plan PPL · AI Training</title>
 
 <!-- PWA: manifest + theme colour -->
 <link rel="manifest" href="manifest.json">
@@ -12,7 +12,7 @@
 <!-- iOS PWA: install behaviour -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PPL Split">
+<meta name="apple-mobile-web-app-title" content="Plan PPL">
 <meta name="mobile-web-app-capable" content="yes">
 
 <!-- iOS home screen icons (Safari ignores the manifest for these) -->
@@ -1539,8 +1539,8 @@ body{
 <div class="hdr" id="appShell" style="display:none">
   <div class="hdr-top">
     <div>
-      <div class="hdr-logo">PPL<span>·</span>SPLIT</div>
-      <div class="hdr-sub" id="hdrSub">PPL SPLIT</div>
+      <div class="hdr-logo">PLAN<span>·</span>PPL</div>
+      <div class="hdr-sub" id="hdrSub">PLAN PPL</div>
       <div class="hdr-user" id="hdrUser"></div>
     </div>
     <div class="hdr-right">
@@ -1945,7 +1945,7 @@ function _renderObStep(){
 
   document.getElementById('onboardingOverlay').innerHTML = `
     <div class="ob-wrap">
-      <div class="ob-logo">PPL<span>·</span>SPLIT</div>
+      <div class="ob-logo">PLAN<span>·</span>PPL</div>
       <div class="ob-dots">${dots}</div>
       <div class="ob-title">${cfg.title}</div>
       <div class="ob-sub">${cfg.sub}</div>
@@ -1985,7 +1985,7 @@ async function obNext(){
 async function obGenerate(){
   document.getElementById('onboardingOverlay').innerHTML = `
     <div class="ob-wrap" style="justify-content:center;min-height:80vh;">
-      <div class="ob-logo">PPL<span>·</span>SPLIT</div>
+      <div class="ob-logo">PLAN<span>·</span>PPL</div>
       <div class="ob-spinner"></div>
       <div class="ob-load-title">Building Your Plan</div>
       <div class="ob-load-sub">Claude is generating a personalised programme based on your profile…</div>
@@ -2040,7 +2040,7 @@ async function obGenerate(){
   }catch(err){
     document.getElementById('onboardingOverlay').innerHTML = `
       <div class="ob-wrap" style="justify-content:center;min-height:80vh;">
-        <div class="ob-logo">PPL<span>·</span>SPLIT</div>
+        <div class="ob-logo">PLAN<span>·</span>PPL</div>
         <div style="font-size:40px;margin:20px 0">⚠️</div>
         <div class="ob-load-title">Something went wrong</div>
         <div class="ob-load-sub" style="margin-bottom:24px">${err.message}</div>
@@ -2147,7 +2147,7 @@ function renderProgramTimeline(){
       const dateStr  = addDays(_programStartDate, w*7+d);
       const dow      = new Date(dateStr+'T00:00:00').getDay();
       const dayLabel = LABELS[dow];
-      const dayDef   = DAYS.find(day=>day.label===dayLabel);
+      const dayDef   = DAYS.find(day=>(day.label||'').toUpperCase()===dayLabel);
       if(!dayDef) continue;
 
       const sessionData = appData.sessions[dateStr]?.[dayDef.id];
@@ -2461,7 +2461,7 @@ function renderCalendar(){
         if(y!==calYear || m-1!==calMonth) continue;
         if(trainedMap[ds]) continue; // session data takes priority
         const dayLabel = CAL_LABELS[new Date(ds+'T00:00:00').getDay()];
-        const dayDef   = DAYS.find(day=>day.label===dayLabel);
+        const dayDef   = DAYS.find(day=>(day.label||'').toUpperCase()===dayLabel);
         if(!dayDef) continue;
         planMap[ds] = { type:dayDef.type, isEnd: ds===progEndStr };
       }
@@ -2601,10 +2601,12 @@ function renderExerciseProgress(){
 
 function renderHist(){
   const el = document.getElementById('histContent');
+  const timeline = _programStartDate ? renderProgramTimeline() : '';
   el.innerHTML = `<div class="hist-wrap">
     ${renderCalendar()}
     ${renderExerciseProgress()}
-    ${renderProgramTimeline()}
+    ${timeline}
+    ${renderSessionList()}
   </div>`;
 }
 
