@@ -1641,6 +1641,9 @@ async function loadProfile(){
 
 async function _finishSignIn(user, profile){
   try{
+    // Load program metadata first so syncActiveDayToToday can use rotation-based matching
+    if(profile?.program_weeks)      _programWeeks     = profile.program_weeks;
+    if(profile?.program_start_date) _programStartDate = profile.program_start_date;
     syncActiveDayToToday();
     await loadDataFromCloud();
     try{
@@ -1657,9 +1660,6 @@ async function _finishSignIn(user, profile){
       `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
       `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
     el.classList.add('visible');
-    // Load program timeline metadata
-    if(profile?.program_weeks)      _programWeeks     = profile.program_weeks;
-    if(profile?.program_start_date) _programStartDate = profile.program_start_date;
     // Update subtitle with profile settings
     const sub = document.getElementById('hdrSub');
     if(sub && profile){
@@ -2343,9 +2343,18 @@ let _programWeeks = 8;
 let _programStartDate = null; // 'YYYY-MM-DD'
 
 function syncActiveDayToToday(){
+  // Primary: label-based matching (default plan has MON/TUE/WED labels)
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
   const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
-  activeDay = i>=0 ? DAYS[i].id : DAYS[0].id;
+  if(i>=0){ activeDay = DAYS[i].id; return; }
+  // Fallback: rotation-based using program start date (AI plans)
+  if(_programStartDate){
+    const start = new Date(_programStartDate+'T00:00:00');
+    const now   = new Date(getToday()+'T00:00:00');
+    const diff  = Math.round((now-start)/86400000);
+    if(diff>=0){ activeDay = DAYS[diff % DAYS.length].id; return; }
+  }
+  activeDay = DAYS[0].id;
 }
 let activeDay = 0;
 syncActiveDayToToday();
@@ -2562,24 +2571,36 @@ function renderSessionList(){
 }
 
 function renderExerciseProgress(){
-  // Build flat list of all exercises across all days
-  const allEx = [];
-  DAYS.forEach(d=>d.exercises.forEach((e,i)=>allEx.push({key:`${d.id}_${i}`,name:e.name,dayName:d.name,type:d.type})));
+  // Build deduplicated list of unique exercise names across all days
+  const seen = new Set();
+  const uniqueNames = [];
+  DAYS.forEach(d=>d.exercises.forEach(e=>{ if(!seen.has(e.name)){ seen.add(e.name); uniqueNames.push(e.name); } }));
 
-  if(!progExKey) progExKey = allEx[0].key;
+  if(!progExKey || !uniqueNames.includes(progExKey)) progExKey = uniqueNames[0];
 
-  const options = allEx.map(e=>`<option value="${e.key}" ${e.key===progExKey?'selected':''}>${e.dayName} · ${e.name}</option>`).join('');
+  const options = uniqueNames.map(name=>`<option value="${name}" ${name===progExKey?'selected':''}>${name}</option>`).join('');
 
-  // Find all sessions that have data for this exercise
-  const [dayId,exIndex] = progExKey.split('_').map(Number);
+  // Build lookup: exerciseName -> [{dayId, exIndex}] across all days
+  const nameMap = {};
+  DAYS.forEach(d=>d.exercises.forEach((e,i)=>{
+    if(!nameMap[e.name]) nameMap[e.name]=[];
+    nameMap[e.name].push({dayId:d.id, exIndex:i});
+  }));
+  const slots = nameMap[progExKey] || [];
+
+  // Aggregate sets from all matching slots across all dates
   const rows = [];
   for(const date of Object.keys(appData.sessions).sort().reverse()){
-    const sets = appData.sessions[date]?.[dayId]?.[exIndex];
-    if(!sets || !Array.isArray(sets) || !sets.some(s=>s&&(s.wt||s.reps))) continue;
-    // find best set (highest wt)
-    const validSets = sets.filter(s=>s&&(s.wt||s.reps));
-    const bestIdx = validSets.reduce((bi,s,i)=>(s.wt||0)>(validSets[bi]?.wt||0)?i:bi, 0);
-    rows.push({date, sets:validSets, bestIdx});
+    const daySessions = appData.sessions[date];
+    if(!daySessions) continue;
+    let allSets = [];
+    for(const {dayId, exIndex} of slots){
+      const sets = daySessions[dayId]?.[exIndex];
+      if(sets && Array.isArray(sets)) allSets = allSets.concat(sets.filter(s=>s&&(s.wt||s.reps)));
+    }
+    if(!allSets.length) continue;
+    const bestIdx = allSets.reduce((bi,s,i)=>(s.wt||0)>(allSets[bi]?.wt||0)?i:bi, 0);
+    rows.push({date, sets:allSets, bestIdx});
   }
 
   const tableRows = rows.length ? rows.map(r=>{
