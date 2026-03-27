@@ -2372,8 +2372,19 @@ function renderProgramTimeline(){
 }
 
 function isDayLocked(dayId){
-  const today = getToday();
-  return !!(appData.sessions[today]?.[dayId]?._completed);
+  // Locked if completed any day this week (Mon–today), resets on Monday
+  const now = new Date();
+  const jsDow = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (jsDow===0 ? 6 : jsDow-1));
+  monday.setHours(0,0,0,0);
+  for(let i=0;i<7;i++){
+    const d=new Date(monday); d.setDate(monday.getDate()+i);
+    if(d>now) break;
+    const ds=d.toISOString().slice(0,10);
+    if(appData.sessions[ds]?.[dayId]?._completed) return true;
+  }
+  return false;
 }
 
 function completeDay(dayId){
@@ -2587,6 +2598,14 @@ function toggleAlts(key, event){
   const panel = document.getElementById('alts-'+key);
   const btn   = document.getElementById('altsbtn-'+key);
   if(panel){ const open = panel.classList.toggle('open'); if(btn) btn.classList.toggle('open',open); }
+}
+
+function selectAlt(dayId, exIndex, altName, event){
+  event.stopPropagation();
+  const dayIdx = DAYS.findIndex(d=>d.id===dayId);
+  if(dayIdx<0) return;
+  DAYS[dayIdx].exercises[exIndex].name = altName;
+  renderDay();
 }
 
 function getTrainingStreak(){
@@ -3086,7 +3105,7 @@ function renderDay(){
       ? `<button id="altsbtn-${key}" class="alts-btn" onclick="toggleAlts('${key}',event)">ALT</button>`
       : '';
     const altsPanel = (e.alts&&e.alts.length)
-      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Alternatives</div>${e.alts.map(a=>`<div class="alt-item">${a}</div>`).join('')}</div>`
+      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Tap to swap exercise</div>${e.alts.map(a=>`<div class="alt-item" onclick="selectAlt(${d.id},${i},'${a.replace(/'/g,"&#39;")}',event)">${a}</div>`).join('')}</div>`
       : '';
     return `
     <div class="ex-card ${done?'done':''}" style="--day-col:${d.col}">
