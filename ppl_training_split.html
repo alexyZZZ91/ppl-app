@@ -2029,7 +2029,7 @@ document.addEventListener('visibilitychange', async ()=>{
 /* ── ONBOARDING ── */
 const EDGE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/hyper-responder';
 
-let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, programWeeks:8, injuries:[], otherInjury:'' };
+let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'' };
 
 const OB_STEPS = [
   { key:'experience', title:'Experience Level', sub:'How long have you been training consistently?', type:'card',
@@ -2055,6 +2055,8 @@ const OB_STEPS = [
     ]},
   { key:'daysPerWeek', title:'Days Per Week', sub:'How many days can you train?', type:'pill',
     options:[{value:3,label:'3'},{value:4,label:'4'},{value:5,label:'5'},{value:6,label:'6'}]},
+  { key:'sessionDuration', title:'Session Length', sub:'How long do you have to train each session?', type:'pill',
+    options:[{value:45,label:'45 MIN'},{value:60,label:'60 MIN'},{value:90,label:'90 MIN'}]},
   { key:'programWeeks', title:'Program Duration', sub:'How many weeks before we prompt you to reassess and refresh your plan?', type:'pill',
     options:[{value:4,label:'4'},{value:6,label:'6'},{value:8,label:'8'},{value:10,label:'10'}]},
   { key:'injuries', title:'Any Limitations?', sub:'Select areas to avoid. (Optional)', type:'check',
@@ -2068,7 +2070,7 @@ const OB_STEPS = [
 ];
 
 function showOnboarding(){
-  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, programWeeks:8, injuries:[], otherInjury:'' };
+  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'' };
   document.getElementById('onboardingOverlay').style.display='flex';
   _renderObStep();
 }
@@ -2169,11 +2171,12 @@ async function obGenerate(){
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
       body: JSON.stringify({
-        experience: _ob.experience,
-        equipment:  _ob.equipment,
-        goal:       _ob.goal,
-        daysPerWeek:_ob.daysPerWeek,
-        injuries:   baseInjuries,
+        experience:      _ob.experience,
+        equipment:       _ob.equipment,
+        goal:            _ob.goal,
+        daysPerWeek:     _ob.daysPerWeek,
+        sessionDuration: _ob.sessionDuration,
+        injuries:        baseInjuries,
       }),
     });
     const json = await res.json();
