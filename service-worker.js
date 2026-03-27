@@ -7,7 +7,7 @@
 // The activate handler will automatically purge the old cache.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_NAME = 'ppl-split-v32';
+const CACHE_NAME = 'ppl-split-v33';
 
 const PRECACHE_URLS = [
   './ppl_training_split.html',
@@ -44,6 +44,9 @@ self.addEventListener('activate', event => {
 
 // ── Fetch: route requests to the right strategy ───────────────────────────────
 self.addEventListener('fetch', event => {
+  // Ignore non-http(s) requests (e.g. chrome-extension://) — Cache API rejects them
+  if (!event.request.url.startsWith('http')) return;
+
   const url = new URL(event.request.url);
 
   // Google Fonts: Network-First so fonts stay fresh, cache as fallback for offline
