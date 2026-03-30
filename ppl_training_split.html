@@ -751,11 +751,12 @@ body{
   background:var(--panel);
   border-top:1px solid var(--border2);
   border-radius:24px 24px 0 0;
-  padding:0 24px calc(32px + env(safe-area-inset-bottom));
+  padding:0 20px calc(28px + env(safe-area-inset-bottom));
   transform:translateY(100%);
   transition:transform .35s cubic-bezier(.32,1,.32,1);
   z-index:300;
-  display:flex;flex-direction:column;align-items:center;gap:12px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  box-sizing:border-box;
 }
 #restTimerOverlay.active{transform:translateY(0);}
 .rest-handle{
@@ -778,7 +779,7 @@ body{
   font-family:'DM Mono',monospace;font-size:38px;font-weight:700;color:var(--white);
   letter-spacing:-2px;
 }
-.rest-controls{display:flex;gap:8px;align-items:center;width:100%;}
+.rest-controls{display:flex;gap:8px;align-items:center;width:100%;box-sizing:border-box;}
 .rest-adj{
   flex:1;
   background:var(--panel2);border:1px solid var(--border2);color:var(--muted);
@@ -2056,8 +2057,8 @@ const OB_STEPS = [
     ]},
   { key:'daysPerWeek', title:'Days Per Week', sub:'How many days can you train?', type:'pill',
     options:[{value:3,label:'3'},{value:4,label:'4'},{value:5,label:'5'},{value:6,label:'6'}]},
-  { key:'sessionDuration', title:'Session Length', sub:'How long do you have to train each session?', type:'pill',
-    options:[{value:45,label:'45 MIN'},{value:60,label:'60 MIN'},{value:90,label:'90 MIN'}]},
+  { key:'sessionDuration', title:'Session Length', sub:'How many minutes per session? (45 / 60 / 90)', type:'pill',
+    options:[{value:45,label:'45'},{value:60,label:'60'},{value:90,label:'90'}]},
   { key:'programWeeks', title:'Program Duration', sub:'How many weeks before we prompt you to reassess and refresh your plan?', type:'pill',
     options:[{value:6,label:'6'},{value:8,label:'8'},{value:10,label:'10'},{value:12,label:'12'}]},
   { key:'injuries', title:'Any Limitations?', sub:'Select areas to avoid. (Optional)', type:'check',
@@ -2376,16 +2377,16 @@ function renderProgramTimeline(){
 }
 
 function isDayLocked(dayId){
-  // Locked if completed any day this week (Mon–today), resets on Monday
-  const now = new Date();
-  const jsDow = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (jsDow===0 ? 6 : jsDow-1));
-  monday.setHours(0,0,0,0);
-  for(let i=0;i<7;i++){
-    const d=new Date(monday); d.setDate(monday.getDate()+i);
-    if(d>now) break;
-    const ds=d.toISOString().slice(0,10);
+  // Locked if completed any day this week (Mon–today), resets on Monday.
+  // Use UTC dates throughout to avoid local-midnight → previous-UTC-day conversion bugs.
+  const todayStr = getToday(); // UTC date string e.g. "2026-03-30"
+  const todayUTC = new Date(todayStr + 'T12:00:00Z'); // noon UTC avoids any DST edge
+  const jsDow = todayUTC.getUTCDay(); // 0=Sun,1=Mon…6=Sat
+  const daysBack = jsDow === 0 ? 6 : jsDow - 1; // days since Monday
+  for(let i=0; i<=daysBack; i++){
+    const d = new Date(todayUTC);
+    d.setUTCDate(todayUTC.getUTCDate() - daysBack + i);
+    const ds = d.toISOString().slice(0,10);
     if(appData.sessions[ds]?.[dayId]?._completed) return true;
   }
   return false;
