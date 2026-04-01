@@ -863,6 +863,14 @@ body{
   font-style:italic;
 }
 
+.ex-1rm{
+  padding:4px 16px 8px;
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:.5px;
+  color:var(--accent2);
+  min-height:22px;
+}
 .last-sess{
   margin-top:4px;
   padding-top:8px;
@@ -3138,6 +3146,9 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName){
       </div>`;
   }
 
+  const ormVal = calc1RM(dayId, exIndex);
+  const ormHTML = `<div id="orm-${dayId}-${exIndex}" class="ex-1rm">${ormVal ? `Est. 1RM ~${ormVal}kg` : ''}</div>`;
+
   let lastHTML = '';
   if(lastSess){
     const pills = lastSess.sets
@@ -3169,7 +3180,19 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName){
           onfocus="event.stopPropagation()">${todayNote}</textarea>
       </div>`;
 
-  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()"><div class="set-rows">${rowsHTML}</div>${lastHTML}${rpeHTML}${noteHTML}</div>`;
+  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()"><div class="set-rows">${rowsHTML}</div>${ormHTML}${lastHTML}${rpeHTML}${noteHTML}</div>`;
+}
+
+function calc1RM(dayId, exIndex){
+  const sets = getTodaySets(dayId, exIndex) || [];
+  let best = 0;
+  for(const s of sets){
+    if(s && s.wt > 0 && s.reps > 0 && s.reps <= 15){
+      const est = s.wt * (1 + s.reps / 30);
+      if(est > best) best = est;
+    }
+  }
+  return best > 0 ? Math.round(best) : null;
 }
 
 function handleSetInput(dayId, exIndex, setIndex, changedEl){
@@ -3178,6 +3201,11 @@ function handleSetInput(dayId, exIndex, setIndex, changedEl){
   const wt   = parseFloat(inputs[0].value) || 0;
   const reps = parseInt(inputs[1].value)   || 0;
   logSet(dayId, exIndex, setIndex, wt, reps);
+  const ormEl = document.getElementById(`orm-${dayId}-${exIndex}`);
+  if(ormEl){
+    const est = calc1RM(dayId, exIndex);
+    ormEl.textContent = est ? `Est. 1RM ~${est}kg` : '';
+  }
 }
 
 function renderDay(){
