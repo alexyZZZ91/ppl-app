@@ -76,6 +76,11 @@ INJURIES: ${injuries?.length ? injuries.join(', ') : 'None'}
 Generate a ${daysPerWeek}-day PPL plan as a JSON array. Each object must follow this EXACT structure:
 {"label":"Push A","tag":"PUSH","color":"#ff4e3a","exercises":[{"name":"Exercise Name","sets":3,"reps":"8-12","note":"Form tip","alts":["Alternative 1","Alternative 2","Alternative 3"]}]}
 
+NAMING RULES (critical — inconsistent names break progress tracking):
+- Always use the FULL equipment prefix: "Barbell Romanian Deadlift" not "Romanian Deadlift", "Dumbbell Lateral Raise" not "Lateral Raise", "Cable Tricep Pushdown" not "Tricep Pushdown"
+- Never use shorthand or synonyms. Pick ONE name and use it identically on every day it appears
+- If the same exercise appears in both A and B variants of a day, the name MUST be letter-for-letter identical
+
 RULES:
 - tag must be PUSH, PULL, or LEGS only
 - color: PUSH=#ff4e3a PULL=#3ab8ff LEGS=#a855f7
@@ -87,6 +92,7 @@ RULES:
   • Work the same muscle group
   • Use the same equipment type (respect the equipment rule)
   • Are genuinely different movements (not just grip variations)
+  • Follow the same NAMING RULES above
 - Return ONLY the JSON array, no markdown, no other text`
 
     const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
@@ -97,7 +103,7 @@ RULES:
         message = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 3072,
-          system: `You are a strength and conditioning coach. ${equipmentRule} Generating exercises that violate the equipment rule is a critical failure. Every exercise object MUST contain an "alts" array of 3 alternatives. Missing alts is a critical failure.`,
+          system: `You are a strength and conditioning coach. ${equipmentRule} Generating exercises that violate the equipment rule is a critical failure. Every exercise object MUST contain an "alts" array of 3 alternatives. Missing alts is a critical failure. Exercise names MUST use full equipment prefixes (e.g. "Barbell Romanian Deadlift" not "Romanian Deadlift") and be identical every time the same exercise appears — inconsistent naming breaks progress tracking.`,
           messages: [{ role: 'user', content: prompt }]
         })
         break
