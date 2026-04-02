@@ -781,7 +781,7 @@ body{
 }
 .rest-controls{display:flex;gap:8px;align-items:center;align-self:stretch;box-sizing:border-box;}
 .rest-adj{
-  flex:1;
+  flex:1;min-width:0;
   background:var(--panel2);border:1px solid var(--border2);color:var(--muted);
   font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;
   padding:11px 0;border-radius:8px;cursor:pointer;
@@ -789,7 +789,7 @@ body{
 }
 .rest-adj:hover{color:var(--white);border-color:var(--accent2);}
 .rest-skip{
-  flex:2;
+  flex:2;min-width:0;
   background:var(--accent);color:#080b0f;
   font-family:'DM Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;
   padding:13px 0;border:none;border-radius:8px;cursor:pointer;
@@ -2290,14 +2290,19 @@ async function obGenerate(){
   });
 })();
 
-function getLastSession(dayId, exIndex){
+function getLastSession(dayId, exIndex, exName){
   const today = getToday();
   const dates = Object.keys(appData.sessions).sort().reverse();
   for(const date of dates){
     if(date >= today) continue;
-    const dayData = appData.sessions[date]?.[dayId]?.[exIndex];
-    if(dayData && dayData.some(s => s.wt || s.reps)){
-      return { date, sets: dayData };
+    const dayData = appData.sessions[date]?.[dayId];
+    if(!dayData) continue;
+    // If this session has name tracking, skip if the name doesn't match
+    if(exName && dayData._exNames && dayData._exNames[exIndex] &&
+       dayData._exNames[exIndex] !== exName) continue;
+    const sets = dayData[exIndex];
+    if(sets && sets.some(s => s.wt || s.reps)){
+      return { date, sets };
     }
   }
   return null;
@@ -2307,12 +2312,16 @@ function getTodaySets(dayId, exIndex){
   return appData.sessions[getToday()]?.[dayId]?.[exIndex] || null;
 }
 
-function logSet(dayId, exIndex, setIndex, wt, reps){
+function logSet(dayId, exIndex, setIndex, wt, reps, exName){
   const today = getToday();
   if(!appData.sessions[today]) appData.sessions[today] = {};
   if(!appData.sessions[today][dayId]) appData.sessions[today][dayId] = {};
   if(!appData.sessions[today][dayId][exIndex]) appData.sessions[today][dayId][exIndex] = [];
   appData.sessions[today][dayId][exIndex][setIndex] = { wt, reps };
+  if(exName){
+    if(!appData.sessions[today][dayId]._exNames) appData.sessions[today][dayId]._exNames = {};
+    appData.sessions[today][dayId]._exNames[exIndex] = exName;
+  }
   saveData(appData);
 }
 
@@ -3121,7 +3130,7 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName){
   const todaySets = getTodaySets(dayId, exIndex) || [];
   const todayRpe  = appData.sessions[getToday()]?.[dayId]?.[`rpe_${exIndex}`] ?? null;
   const todayNote = appData.sessions[getToday()]?.[dayId]?.[`note_${exIndex}`] ?? '';
-  const lastSess  = getLastSession(dayId, exIndex);
+  const lastSess  = getLastSession(dayId, exIndex, exName);
   const dis = locked ? 'disabled' : '';
 
   let rowsHTML = '';
@@ -3200,7 +3209,8 @@ function handleSetInput(dayId, exIndex, setIndex, changedEl){
   const inputs = row.querySelectorAll('.set-input');
   const wt   = parseFloat(inputs[0].value) || 0;
   const reps = parseInt(inputs[1].value)   || 0;
-  logSet(dayId, exIndex, setIndex, wt, reps);
+  const exName = DAYS.find(d=>d.id===dayId)?.exercises[exIndex]?.name || '';
+  logSet(dayId, exIndex, setIndex, wt, reps, exName);
   const ormEl = document.getElementById(`orm-${dayId}-${exIndex}`);
   if(ormEl){
     const est = calc1RM(dayId, exIndex);
