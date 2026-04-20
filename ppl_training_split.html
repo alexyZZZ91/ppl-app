@@ -832,16 +832,39 @@ body{
   font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;
   color:var(--accent2);margin-bottom:10px;text-transform:uppercase;
 }
+.alts-hint{
+  font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1.5px;
+  color:var(--muted2);text-transform:uppercase;margin-bottom:10px;
+}
 .alt-item{
+  position:relative;overflow:hidden;
   font-size:13px;color:var(--muted);padding:8px 12px;margin-bottom:4px;
   display:flex;align-items:center;gap:10px;
   background:var(--panel2);border:1px solid var(--border);border-radius:7px;
-  cursor:pointer;transition:all .15s;
+  cursor:pointer;transition:color .15s,border-color .15s;
+  user-select:none;-webkit-user-select:none;
 }
 .alt-item:hover{color:var(--white);border-color:var(--accent2);}
 .alt-item::before{
   content:'⇄';font-size:11px;color:var(--accent2);flex-shrink:0;
 }
+.alt-item::after{
+  content:'';position:absolute;top:0;left:0;bottom:0;width:0;
+  background:rgba(74,240,184,.18);pointer-events:none;border-radius:7px;
+}
+.alt-item.holding{border-color:var(--accent2);color:var(--white);}
+.alt-item.holding::after{width:100%;transition:width 600ms linear;}
+/* Toast */
+#appToast{
+  position:fixed;bottom:110px;left:50%;
+  transform:translateX(-50%) translateY(12px);
+  background:var(--panel2);border:1px solid var(--accent2);
+  color:var(--white);font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:1px;padding:10px 20px;
+  border-radius:8px;opacity:0;transition:opacity .2s,transform .2s;
+  pointer-events:none;z-index:500;white-space:nowrap;
+}
+#appToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* ── RPE ── */
 .ex-rpe{padding:10px 16px 12px;border-top:1px solid var(--border);}
@@ -2731,6 +2754,84 @@ function selectAlt(dayId, exIndex, altName, event){
   renderDay();
 }
 
+// ── Hold-to-save alt ────────────────────────────────────────────────────────
+let _altPressTimer = null;
+let _altPressEl    = null;
+let _altPressData  = null;
+
+function altPressStart(dayId, exIndex, altName, event){
+  event.stopPropagation();
+  _altPressData = { dayId, exIndex, altName };
+  _altPressEl   = event.currentTarget;
+  _altPressEl.classList.add('holding');
+  _altPressTimer = setTimeout(async () => {
+    _altPressTimer = null;
+    const el   = _altPressEl;
+    const data = _altPressData;
+    _altPressEl  = null;
+    _altPressData = null;
+    if(el) el.classList.remove('holding');
+    await saveAltToPlan(data.dayId, data.exIndex, data.altName);
+  }, 600);
+}
+
+function altPressEnd(event){
+  event.stopPropagation();
+  if(!_altPressTimer) return; // timer already fired — save happened
+  clearTimeout(_altPressTimer);
+  _altPressTimer = null;
+  if(_altPressEl){ _altPressEl.classList.remove('holding'); }
+  const data = _altPressData;
+  _altPressEl   = null;
+  _altPressData = null;
+  if(data) selectAlt(data.dayId, data.exIndex, data.altName, event);
+}
+
+function altPressCancel(event){
+  if(_altPressTimer){ clearTimeout(_altPressTimer); _altPressTimer = null; }
+  if(_altPressEl){ _altPressEl.classList.remove('holding'); _altPressEl = null; }
+  _altPressData = null;
+}
+
+async function saveAltToPlan(dayId, exIndex, altName){
+  const dayIdx = DAYS.findIndex(d=>d.id===dayId);
+  if(dayIdx<0) return;
+  DAYS[dayIdx].exercises[exIndex].name = altName;
+  try{
+    const planToSave = DAYS.map(d=>({
+      label:     d.label,
+      tag:       d.tag,
+      type:      d.type,
+      color:     d.color,
+      focus:     d.focus || '',
+      activities:d.activities || [],
+      exercises: d.exercises.map(e=>({ name:e.name, sets:e.sets, reps:e.reps, note:e.note, alts:e.alts||[] })),
+    }));
+    const { error } = await _sb.from('user_profiles')
+      .update({ plan: planToSave })
+      .eq('user_id', _currentUser.id);
+    if(error) throw error;
+    showToast('✓ Saved to plan');
+    renderDay();
+  }catch(err){
+    console.error('saveAltToPlan error:', err);
+    showToast('⚠ Save failed — try again');
+  }
+}
+
+function showToast(msg){
+  let el = document.getElementById('appToast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'appToast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
 function getTrainingStreak(){
   let streak = 0;
   const check = new Date();
@@ -3306,7 +3407,7 @@ function renderDay(){
       ? `<button id="altsbtn-${key}" class="alts-btn" onclick="toggleAlts('${key}',event)">⇄ SWAP</button>`
       : '';
     const altsPanel = (e.alts&&e.alts.length)
-      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Machine busy? Choose an alternative</div>${e.alts.map(a=>`<div class="alt-item" onclick="selectAlt(${d.id},${i},'${a.replace(/'/g,"&#39;")}',event)">${a}</div>`).join('')}</div>`
+      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Machine busy? Choose an alternative</div><div class="alts-hint">Tap — swap today &nbsp;·&nbsp; Hold — save to plan</div>${e.alts.map(a=>`<div class="alt-item" onpointerdown="altPressStart(${d.id},${i},'${a.replace(/'/g,"&#39;")}',event)" onpointerup="altPressEnd(event)" onpointercancel="altPressCancel(event)" onpointerleave="altPressCancel(event)" oncontextmenu="event.preventDefault()">${a}</div>`).join('')}</div>`
       : '';
     return `
     <div class="ex-card ${done?'done':''}" style="--day-col:${d.col}">
