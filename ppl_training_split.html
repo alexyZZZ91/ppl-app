@@ -2673,9 +2673,12 @@ function syncActiveDayToToday(){
   const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
   if(i>=0){ activeView='day'; activeDay = DAYS[i].id; return; }
   // Fallback: last completed session → same day if today, next day if prior (AI plans)
+  // Only look at sessions from the current program start onwards — older sessions
+  // belong to a previous plan and have unreliable day indices
   const today = getToday();
   const dates = Object.keys(appData.sessions||{}).sort();
   for(let di=dates.length-1; di>=0; di--){
+    if(_programStartDate && dates[di] < _programStartDate) break;
     const sess = appData.sessions[dates[di]];
     const completedIds = Object.keys(sess).filter(k=>sess[k]?._completed);
     if(completedIds.length){
@@ -3263,7 +3266,16 @@ function renderDay(){
   if(d.type === 'rest'){
     const acts = d.activities && d.activities.length ? d.activities
       : ['Light walk or Zone 2 cardio — 20–30 min','Hip flexor & hamstring stretching — 10 min','Foam rolling — target muscles from last session','Focus on sleep (8 hrs) and hydration (3L)'];
-    const actsHTML = acts.map(a=>`<div class="recovery-item"><span class="recovery-bullet">○</span>${a}</div>`).join('');
+    const iconFor = t => {
+      const s = t.toLowerCase();
+      if(s.includes('walk')||s.includes('cardio')||s.includes('zone')) return '🚶';
+      if(s.includes('foam')||s.includes('rolling')) return '🎯';
+      if(s.includes('stretch')||s.includes('mobility')||s.includes('flexor')) return '🧘';
+      if(s.includes('sleep')||s.includes('hydrat')||s.includes('water')) return '💧';
+      if(s.includes('breath')||s.includes('meditat')) return '🧠';
+      return '✅';
+    };
+    const actsHTML = acts.map(a=>`<div class="rest-tip"><div class="rest-tip-icon">${iconFor(a)}</div><div>${a}</div></div>`).join('');
     document.getElementById('mainContent').innerHTML = `
       <div class="day-hero" style="--day-col:#334155">
         <div class="hero-bg"></div>
@@ -3275,8 +3287,8 @@ function renderDay(){
           <div class="hstat"><div class="hstat-val" style="color:#94a3b8">Rest</div><div class="hstat-lbl">Intensity</div></div>
         </div>
       </div>
-      <div class="recovery-wrap">
-        <div class="recovery-head">Today's Suggestions</div>
+      <div class="rest-tips">
+        <div class="rest-tips-head">Today's Suggestions</div>
         ${actsHTML}
       </div>`;
     return;
