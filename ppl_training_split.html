@@ -779,7 +779,7 @@ body{
   font-family:'DM Mono',monospace;font-size:38px;font-weight:700;color:var(--white);
   letter-spacing:-2px;
 }
-.rest-controls{display:flex;gap:8px;align-items:center;align-self:stretch;box-sizing:border-box;}
+.rest-controls{display:flex;gap:8px;align-items:center;align-self:stretch;width:100%;box-sizing:border-box;}
 .rest-adj{
   flex:1;min-width:0;
   background:var(--panel2);border:1px solid var(--border2);color:var(--muted);
@@ -796,6 +796,22 @@ body{
   transition:opacity .15s;
 }
 .rest-skip:hover{opacity:.85;}
+
+/* ── ACTIVE RECOVERY DAY ── */
+.recovery-wrap{padding:16px;}
+.recovery-head{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted2);margin-bottom:12px;
+}
+.recovery-item{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px 14px;margin-bottom:8px;
+  background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+  font-size:14px;color:var(--white);line-height:1.4;
+}
+.recovery-bullet{
+  font-size:18px;line-height:1;color:var(--muted2);flex-shrink:0;margin-top:1px;
+}
 
 /* ── EXERCISE ALTERNATIVES ── */
 .alts-btn{
@@ -1793,20 +1809,24 @@ function saveData(data){
 let appData = { checked:{}, sessions:{} };
 
 function normalizePlan(plan){
-  return plan.map((d,i)=>({
-    id:        d.id ?? i,
-    label:     (d.label || `Day ${i+1}`).toUpperCase(),
-    name:      d.name  || d.label || `Day ${i+1}`,
-    tag:       (d.tag  || 'PUSH').toUpperCase(),
-    type:      d.type  || (d.tag || 'push').toLowerCase(),
-    color:     d.color || d.col  || '#ff4e3a',
-    col:       d.col   || d.color || '#ff4e3a',
-    focus:     d.focus || '',
-    subs:      d.subs  || '',
-    exercises: (d.exercises||[]),
-    stretches: (d.stretches&&d.stretches.length) ? d.stretches
-      : (FALLBACK_STRETCHES[Object.keys(FALLBACK_STRETCHES).find(k=>(d.type||d.tag||'').toLowerCase().startsWith(k))||'push']),
-  }));
+  return plan.map((d,i)=>{
+    const isRest = (d.tag||'').toUpperCase()==='REST' || (d.type||'').toLowerCase()==='rest';
+    return {
+      id:         d.id ?? i,
+      label:      (d.label || `Day ${i+1}`).toUpperCase(),
+      name:       d.name  || d.label || `Day ${i+1}`,
+      tag:        (d.tag  || 'PUSH').toUpperCase(),
+      type:       isRest ? 'rest' : (d.type || (d.tag || 'push').toLowerCase()),
+      color:      d.color || d.col  || (isRest ? '#334155' : '#ff4e3a'),
+      col:        d.col   || d.color || (isRest ? '#334155' : '#ff4e3a'),
+      focus:      d.focus || '',
+      subs:       d.subs  || '',
+      activities: d.activities || [],
+      exercises:  isRest ? [] : (d.exercises||[]),
+      stretches:  isRest ? [] : ((d.stretches&&d.stretches.length) ? d.stretches
+        : (FALLBACK_STRETCHES[Object.keys(FALLBACK_STRETCHES).find(k=>(d.type||d.tag||'').toLowerCase().startsWith(k))||'push'])),
+    };
+  });
 }
 
 async function loadProfile(){
@@ -1835,6 +1855,7 @@ async function _finishSignIn(user, profile){
     const name = user.user_metadata?.full_name || user.email || 'User';
     el.innerHTML = name +
       `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
+      `<button class="auth-signout" onclick="clearHistory()">clear history</button>` +
       `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
     el.classList.add('visible');
     // Update subtitle with profile settings
@@ -1896,6 +1917,13 @@ function redoPlan(){
   el.innerHTML = '';
   el.classList.remove('visible');
   showOnboarding();
+}
+
+async function clearHistory(){
+  if(!confirm('This will permanently delete all your logged session history. Your plan and settings are kept. Continue?')) return;
+  appData.sessions = {};
+  await saveData(appData);
+  renderDay(); renderTabs(); updateProg();
 }
 
 /* ── AUTH ── */
@@ -2297,6 +2325,9 @@ function getLastSession(dayId, exIndex, exName){
     if(date >= today) continue;
     const dayData = appData.sessions[date]?.[dayId];
     if(!dayData) continue;
+    // Skip pre-plan sessions without name tracking — plan may have changed and
+    // exercise indices are no longer reliable
+    if(_programStartDate && date < _programStartDate && !dayData._exNames) continue;
     // If this session has name tracking, skip if the name doesn't match
     if(exName && dayData._exNames && dayData._exNames[exIndex] &&
        dayData._exNames[exIndex] !== exName) continue;
@@ -2633,10 +2664,12 @@ let _programWeeks = 8;
 let _programStartDate = null; // 'YYYY-MM-DD'
 
 function syncActiveDayToToday(){
+  // Use UTC day (consistent with getToday() which is also UTC)
+  const _utcDow = new Date(getToday()+'T12:00:00Z').getUTCDay();
   // Sunday → rest day
-  if(new Date().getDay()===0){ activeView='rest'; activeDay=DAYS[0].id; return; }
+  if(_utcDow===0){ activeView='rest'; activeDay=DAYS[0].id; return; }
   // Primary: label-based matching (default plan has MON/TUE/WED labels)
-  const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
+  const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][_utcDow];
   const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
   if(i>=0){ activeView='day'; activeDay = DAYS[i].id; return; }
   // Fallback: last completed session → same day if today, next day if prior (AI plans)
@@ -3000,22 +3033,27 @@ let progExKey = null;
 const _DOW_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 
 function renderTabs(){
-  // Today's 0-based index in our MON=0..SUN=6 system
-  const jsDow = new Date().getDay(); // 0=Sun,1=Mon..6=Sat
+  // Today's 0-based index in our MON=0..SUN=6 system — use UTC to match getToday()
+  const jsDow = new Date(getToday()+'T12:00:00Z').getUTCDay(); // 0=Sun,1=Mon..6=Sat
   const todayIdx = jsDow === 0 ? 6 : jsDow - 1;
 
   const weekBtns = _DOW_LABELS.map((lbl, i) => {
-    const isRest = i === 6;
-    const day    = isRest ? null : DAYS[i];
-    const type   = isRest ? 'rest' : (day?.type || 'push');
-    const isActive = isRest ? activeView==='rest'
-                            : (activeView==='day' && day && day.id===activeDay);
-    const isDone   = !isRest && day && isDayComplete(day);
-    const isToday  = i === todayIdx;
-    const onclick  = isRest ? 'switchRest()' : `switchDay(${day?.id??i})`;
+    const isSunday   = i === 6;
+    const day        = isSunday ? null : DAYS[i];
+    const isPlanRest = !isSunday && day?.type === 'rest';
+    const isRest     = isSunday || isPlanRest;
+    const type       = isSunday ? 'rest' : (day?.type || 'rest');
+    const isActive   = isSunday  ? activeView==='rest'
+                     : isPlanRest ? (activeView==='day' && day && day.id===activeDay)
+                                  : (activeView==='day' && day && day.id===activeDay);
+    const isDone     = !isRest && day && isDayComplete(day);
+    const isToday    = i === todayIdx;
+    const onclick    = isSunday    ? 'switchRest()'
+                     : day         ? `switchDay(${day.id})`
+                                   : 'switchRest()';
     return `<button class="day-btn ${type}${isActive?' active':''}${isDone?' completed':''}${isToday?' today':''}" onclick="${onclick}">
       <span class="d-num">${lbl}</span>
-      <span class="d-type">${isRest?'rest':type}</span>
+      <span class="d-type">${type}</span>
       <span class="d-dot"></span>
       <span class="done-pip"${isRest?' style="display:none"':''}></span>
     </button>`;
@@ -3220,6 +3258,30 @@ function handleSetInput(dayId, exIndex, setIndex, changedEl){
 
 function renderDay(){
   const d = DAYS.find(d=>d.id===activeDay) || DAYS[0];
+
+  // Active recovery / planned rest day
+  if(d.type === 'rest'){
+    const acts = d.activities && d.activities.length ? d.activities
+      : ['Light walk or Zone 2 cardio — 20–30 min','Hip flexor & hamstring stretching — 10 min','Foam rolling — target muscles from last session','Focus on sleep (8 hrs) and hydration (3L)'];
+    const actsHTML = acts.map(a=>`<div class="recovery-item"><span class="recovery-bullet">○</span>${a}</div>`).join('');
+    document.getElementById('mainContent').innerHTML = `
+      <div class="day-hero" style="--day-col:#334155">
+        <div class="hero-bg"></div>
+        <div class="hero-tag">REST</div>
+        <div class="hero-title">${d.label || 'Active Recovery'}</div>
+        <div class="hero-focus">Planned recovery — light movement, no training stress</div>
+        <div class="hero-stats">
+          <div class="hstat"><div class="hstat-val" style="color:#94a3b8">0</div><div class="hstat-lbl">Sets</div></div>
+          <div class="hstat"><div class="hstat-val" style="color:#94a3b8">Rest</div><div class="hstat-lbl">Intensity</div></div>
+        </div>
+      </div>
+      <div class="recovery-wrap">
+        <div class="recovery-head">Today's Suggestions</div>
+        ${actsHTML}
+      </div>`;
+    return;
+  }
+
   const locked = isDayLocked(d.id);
   const today = getToday();
   const checkedFresh = appData.checkedDate === today;

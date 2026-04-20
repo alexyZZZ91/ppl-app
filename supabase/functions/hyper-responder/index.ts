@@ -63,6 +63,17 @@ Deno.serve(async (req) => {
       ? 'SESSION LENGTH: 90 minutes. 5-6 exercises per day, 4-5 sets on compounds, 3 sets on accessories. Full volume is appropriate.'
       : 'SESSION LENGTH: 60 minutes. 4-5 exercises per day, 3-4 sets each. Total sets per session 14-18.'
 
+    const restDays   = Math.max(0, 6 - daysPerWeek)
+    const planSize   = 6 // always return exactly 6 positions (Mon–Sat)
+
+    const structureGuide = restDays > 0
+      ? `Training day structure:
+{"label":"Push A","tag":"PUSH","type":"push","color":"#ff4e3a","exercises":[{"name":"Exercise Name","sets":3,"reps":"8-12","note":"Form tip","alts":["Alternative 1","Alternative 2","Alternative 3"]}]}
+
+Active recovery day structure (place after back-to-back training days — never at position 0):
+{"label":"Active Recovery","tag":"REST","type":"rest","color":"#334155","exercises":[],"activities":["<relevant activity 1>","<relevant activity 2>","<relevant activity 3>"]}`
+      : `{"label":"Push A","tag":"PUSH","color":"#ff4e3a","exercises":[{"name":"Exercise Name","sets":3,"reps":"8-12","note":"Form tip","alts":["Alternative 1","Alternative 2","Alternative 3"]}]}`
+
     const prompt = `You are a strength coach. Follow every rule below exactly.
 
 ${equipmentRule}
@@ -70,11 +81,13 @@ ${equipmentRule}
 EXPERIENCE: ${experience} — ${experienceGuidance}
 GOAL: ${goal} — ${goalGuidance}
 ${durationGuidance}
-DAYS PER WEEK: ${daysPerWeek}
+TRAINING DAYS: ${daysPerWeek} out of 6 (Mon–Sat)
 INJURIES: ${injuries?.length ? injuries.join(', ') : 'None'}
 
-Generate a ${daysPerWeek}-day PPL plan as a JSON array. Each object must follow this EXACT structure:
-{"label":"Push A","tag":"PUSH","color":"#ff4e3a","exercises":[{"name":"Exercise Name","sets":3,"reps":"8-12","note":"Form tip","alts":["Alternative 1","Alternative 2","Alternative 3"]}]}
+Generate EXACTLY ${planSize} items in a JSON array — ${daysPerWeek} training day(s) and ${restDays} active recovery day(s).
+Place recovery days sensibly: after consecutive training days, not at the start of the week.
+
+${structureGuide}
 
 NAMING RULES (critical — inconsistent names break progress tracking):
 - Always use the FULL equipment prefix: "Barbell Romanian Deadlift" not "Romanian Deadlift", "Dumbbell Lateral Raise" not "Lateral Raise", "Cable Tricep Pushdown" not "Tricep Pushdown"
@@ -82,17 +95,18 @@ NAMING RULES (critical — inconsistent names break progress tracking):
 - If the same exercise appears in both A and B variants of a day, the name MUST be letter-for-letter identical
 
 RULES:
-- tag must be PUSH, PULL, or LEGS only
-- color: PUSH=#ff4e3a PULL=#3ab8ff LEGS=#a855f7
+- tag must be PUSH, PULL, LEGS, or REST only
+- color: PUSH=#ff4e3a PULL=#3ab8ff LEGS=#a855f7 REST=#334155
 - Respect the SESSION LENGTH set count limits above — this is critical
 - THE EQUIPMENT RULE ABOVE IS ABSOLUTE — it overrides everything else
 - Rep ranges must match the goal
 - Alternate A/B variants across the week
-- Each exercise MUST include an "alts" array of exactly 3 alternative exercises that:
+- Each TRAINING exercise MUST include an "alts" array of exactly 3 alternative exercises that:
   • Work the same muscle group
   • Use the same equipment type (respect the equipment rule)
   • Are genuinely different movements (not just grip variations)
   • Follow the same NAMING RULES above
+- Recovery day activities should be relevant to the surrounding training days
 - Return ONLY the JSON array, no markdown, no other text`
 
     const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
@@ -103,7 +117,7 @@ RULES:
         message = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 3072,
-          system: `You are a strength and conditioning coach. ${equipmentRule} Generating exercises that violate the equipment rule is a critical failure. Every exercise object MUST contain an "alts" array of 3 alternatives. Missing alts is a critical failure. Exercise names MUST use full equipment prefixes (e.g. "Barbell Romanian Deadlift" not "Romanian Deadlift") and be identical every time the same exercise appears — inconsistent naming breaks progress tracking.`,
+          system: `You are a strength and conditioning coach. ${equipmentRule} Generating exercises that violate the equipment rule is a critical failure. Every TRAINING exercise object MUST contain an "alts" array of 3 alternatives — missing alts is a critical failure. REST/recovery day objects must have an "activities" array and empty "exercises" array. Exercise names MUST use full equipment prefixes (e.g. "Barbell Romanian Deadlift" not "Romanian Deadlift") and be identical every time the same exercise appears — inconsistent naming breaks progress tracking. Always return exactly ${planSize} items.`,
           messages: [{ role: 'user', content: prompt }]
         })
         break
