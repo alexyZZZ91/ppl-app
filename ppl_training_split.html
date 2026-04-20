@@ -887,6 +887,11 @@ body{
   color:var(--accent2);
   min-height:22px;
 }
+.suggest-tag{
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;
+  text-transform:uppercase;color:var(--accent2);opacity:.7;
+  padding:8px 16px 2px;
+}
 .last-sess{
   margin-top:4px;
   padding-top:8px;
@@ -3167,22 +3172,34 @@ function renderRest(){
     </div>`;
 }
 
-function buildSetLogger(dayId, exIndex, numSets, locked, exName){
+function buildSetLogger(dayId, exIndex, numSets, locked, exName, exReps){
   const todaySets = getTodaySets(dayId, exIndex) || [];
   const todayRpe  = appData.sessions[getToday()]?.[dayId]?.[`rpe_${exIndex}`] ?? null;
   const todayNote = appData.sessions[getToday()]?.[dayId]?.[`note_${exIndex}`] ?? '';
   const lastSess  = getLastSession(dayId, exIndex, exName);
   const dis = locked ? 'disabled' : '';
 
+  // Build suggested weights per set
+  const suggestions = [];
+  let hasSuggestions = false;
+  for(let s=0; s<numSets; s++){
+    const sw = (!locked && !todaySets[s]?.wt) ? calcSuggestedWeight(lastSess, s, exReps) : null;
+    suggestions.push(sw);
+    if(sw !== null) hasSuggestions = true;
+  }
+  const suggestTagHTML = (!locked && hasSuggestions)
+    ? `<div class="suggest-tag">💡 suggested from last session</div>` : '';
+
   let rowsHTML = '';
   for(let s=0; s<numSets; s++){
     const wt   = todaySets[s]?.wt   ?? '';
     const reps = todaySets[s]?.reps ?? '';
+    const wtPlaceholder = suggestions[s] !== null ? suggestions[s] : '—';
     rowsHTML += `
       <div class="set-row">
         <span class="set-label">S${s+1}</span>
         <input class="set-input" type="number" inputmode="decimal" min="0" step="0.5"
-               placeholder="—" value="${wt}" ${dis}
+               placeholder="${wtPlaceholder}" value="${wt}" ${dis}
                onchange="handleSetInput(${dayId},${exIndex},${s},this)"
                onclick="event.stopPropagation()">
         <span class="set-unit">kg</span>
@@ -3230,7 +3247,21 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName){
           onfocus="event.stopPropagation()">${todayNote}</textarea>
       </div>`;
 
-  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()"><div class="set-rows">${rowsHTML}</div>${ormHTML}${lastHTML}${rpeHTML}${noteHTML}</div>`;
+  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()">${suggestTagHTML}<div class="set-rows">${rowsHTML}</div>${ormHTML}${lastHTML}${rpeHTML}${noteHTML}</div>`;
+}
+
+function calcSuggestedWeight(lastSess, setIndex, exReps){
+  if(!lastSess || !lastSess.sets) return null;
+  const lastSet = lastSess.sets[setIndex];
+  if(!lastSet || !lastSet.wt) return null;
+  // Parse top of rep range: "8-12" → 12, "4-6" → 6, "12" → 12
+  const topReps = parseInt((exReps||'').toString().split('-').pop()) || 10;
+  if(lastSet.reps && lastSet.reps >= topReps){
+    // Hit top of range last time — earn a small increment
+    const inc = lastSet.wt >= 60 ? 2.5 : 1.25;
+    return Math.round((lastSet.wt + inc) * 4) / 4; // nearest 0.25kg
+  }
+  return lastSet.wt; // same weight — consolidate first
 }
 
 function calc1RM(dayId, exIndex){
@@ -3326,7 +3357,7 @@ function renderDay(){
         </div>
       </div>
       ${altsPanel}
-      ${buildSetLogger(d.id, i, numSets, locked, e.name)}
+      ${buildSetLogger(d.id, i, numSets, locked, e.name, e.reps)}
     </div>`;
   }).join('');
 
