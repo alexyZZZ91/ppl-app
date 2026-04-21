@@ -797,6 +797,22 @@ body{
 }
 .rest-skip:hover{opacity:.85;}
 
+/* ── PORTRAIT LOCK ── */
+#rotateOverlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:var(--bg);flex-direction:column;align-items:center;
+  justify-content:center;gap:20px;text-align:center;padding:32px;
+}
+#rotateOverlay .rot-icon{font-size:48px;animation:rotPulse 1.4s ease-in-out infinite;}
+#rotateOverlay .rot-title{
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted2);
+}
+@keyframes rotPulse{0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);}}
+@media (orientation:landscape) and (max-height:500px){
+  #rotateOverlay{display:flex;}
+}
+
 /* ── ACTIVE RECOVERY DAY ── */
 .recovery-wrap{padding:16px;}
 .recovery-head{
@@ -1708,6 +1724,12 @@ body{
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- Portrait lock — shown in landscape on phones -->
+<div id="rotateOverlay">
+  <div class="rot-icon">📱</div>
+  <div class="rot-title">Rotate to portrait</div>
+</div>
 
 <!-- Auth overlay — shown until user is signed in -->
 <div id="authOverlay" style="display:flex">
