@@ -664,6 +664,18 @@ body{
 }
 
 .win-banner p{font-size:12px;color:var(--muted);}
+.win-share-btn{
+  margin-top:12px;
+  background:transparent;
+  border:1px solid rgba(232,240,74,.3);
+  border-radius:8px;
+  color:var(--accent);
+  font-family:'DM Mono',monospace;
+  font-size:10px;letter-spacing:1px;
+  padding:8px 16px;cursor:pointer;
+  transition:all .2s;
+}
+.win-share-btn:hover{ background:rgba(232,240,74,.08); }
 
 /* ── SET LOGGER ── */
 .set-logger{
@@ -1462,6 +1474,230 @@ body{
   line-height:2;
 }
 
+/* ── PROGRESS CHART ── */
+.prog-chart-wrap{
+  margin:12px 0 16px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 14px 10px;
+  position:relative;
+}
+.prog-chart-title{
+  font-family:'DM Mono',monospace;
+  font-size:8px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--muted2);
+  margin-bottom:10px;
+}
+.prog-chart-svg{
+  width:100%;
+  height:110px;
+  display:block;
+  overflow:visible;
+}
+.prog-chart-pb{
+  font-family:'DM Mono',monospace;
+  font-size:9px;
+  color:var(--accent2);
+  letter-spacing:1px;
+  margin-top:7px;
+  text-align:right;
+}
+.prog-chart-empty{
+  height:80px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:1px;color:var(--muted2);
+  text-transform:uppercase;
+}
+
+/* ── PROGRAMME COMPLETION OVERLAY ── */
+#progCompleteOverlay{
+  display:none;
+  position:fixed;inset:0;z-index:500;
+  background:rgba(8,11,15,.96);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:32px 24px;
+  text-align:center;
+  overflow-y:auto;
+}
+#progCompleteOverlay.show{ display:flex; }
+.pco-badge{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--accent);
+  border:1px solid rgba(232,240,74,.25);
+  border-radius:20px;
+  padding:4px 14px;
+  margin-bottom:16px;
+}
+.pco-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:48px;letter-spacing:4px;
+  color:var(--white);
+  line-height:1;
+  margin-bottom:8px;
+}
+.pco-sub{
+  font-size:13px;color:var(--muted);
+  margin-bottom:28px;line-height:1.5;
+}
+.pco-stats{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;width:100%;max-width:320px;
+  margin-bottom:28px;
+}
+.pco-stat{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 10px;
+}
+.pco-stat-val{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;color:var(--accent);
+  line-height:1;
+}
+.pco-stat-lbl{
+  font-family:'DM Mono',monospace;
+  font-size:8px;letter-spacing:1px;
+  color:var(--muted);margin-top:4px;
+  text-transform:uppercase;
+}
+.pco-stat.highlight .pco-stat-val{ color:var(--accent2); }
+.pco-btns{
+  display:flex;flex-direction:column;gap:10px;
+  width:100%;max-width:320px;
+}
+.pco-btn-primary{
+  background:var(--accent);color:#080b0f;
+  border:none;border-radius:10px;
+  font-family:'DM Mono',monospace;
+  font-size:12px;letter-spacing:2px;
+  text-transform:uppercase;
+  padding:14px;cursor:pointer;font-weight:600;
+  transition:opacity .2s;
+}
+.pco-btn-primary:hover{ opacity:.85; }
+.pco-btn-secondary{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:1px;
+  padding:12px;cursor:pointer;
+  transition:all .2s;
+}
+.pco-btn-secondary:hover{ color:var(--white);border-color:var(--border2); }
+
+/* ── SHARE CARD OVERLAY ── */
+#shareOverlay{
+  display:none;
+  position:fixed;inset:0;z-index:600;
+  background:rgba(8,11,15,.92);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:24px 20px;
+}
+#shareOverlay.show{ display:flex; }
+.share-card{
+  background:#0d1117;
+  border:1px solid var(--border2);
+  border-radius:16px;
+  width:100%;max-width:360px;
+  overflow:hidden;
+}
+.share-card-hdr{
+  padding:18px 20px 14px;
+  border-bottom:1px solid var(--border);
+}
+.share-card-badge{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;
+  padding:3px 9px;border-radius:10px;
+  display:inline-block;margin-bottom:8px;
+}
+.share-card-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;letter-spacing:3px;
+  color:var(--white);line-height:1;
+}
+.share-card-date{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:var(--muted);margin-top:4px;
+}
+.share-card-body{ padding:14px 20px 16px; }
+.share-card-ex{
+  display:flex;align-items:flex-start;
+  justify-content:space-between;
+  padding:8px 0;
+  border-bottom:1px solid var(--border);
+  gap:12px;
+}
+.share-card-ex:last-child{ border-bottom:none; }
+.share-card-ex-name{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:.5px;
+  color:var(--white);text-transform:uppercase;
+  flex:1;line-height:1.4;
+}
+.share-card-ex-best{
+  font-family:'DM Mono',monospace;
+  font-size:10px;color:var(--accent2);
+  white-space:nowrap;
+  text-align:right;
+}
+.share-card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;
+  background:var(--panel2);
+  border-top:1px solid var(--border);
+}
+.share-card-total{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:var(--muted);text-transform:uppercase;
+}
+.share-card-total span{
+  color:var(--white);font-size:13px;
+  font-family:'Bebas Neue',sans-serif;
+  letter-spacing:1px;
+}
+.share-card-brand{
+  font-family:'DM Mono',monospace;
+  font-size:8px;letter-spacing:2px;
+  color:var(--accent);opacity:.6;
+  text-transform:uppercase;
+}
+.share-overlay-btns{
+  display:flex;gap:10px;margin-top:16px;
+  width:100%;max-width:360px;
+}
+.share-dismiss{
+  flex:1;background:transparent;
+  color:var(--muted);border:1px solid var(--border);
+  border-radius:10px;padding:12px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:11px;
+  letter-spacing:1px;
+}
+.share-native{
+  flex:1;background:var(--accent);color:#080b0f;
+  border:none;border-radius:10px;padding:12px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:11px;
+  font-weight:600;letter-spacing:1px;
+  display:none;
+}
+.share-native.visible{ display:block; }
+
 /* ── PROGRAM TIMELINE ── */
 .ptl-wrap{ padding:0 16px 24px; }
 .ptl-week{ margin-bottom:2px; }
@@ -1725,6 +1961,18 @@ body{
 </head>
 <body>
 
+<!-- Programme completion overlay -->
+<div id="progCompleteOverlay"></div>
+
+<!-- Share session overlay -->
+<div id="shareOverlay">
+  <div class="share-card" id="shareCard"></div>
+  <div class="share-overlay-btns">
+    <button class="share-dismiss" onclick="closeShare()">✕ Close</button>
+    <button class="share-native" id="shareNativeBtn" onclick="doNativeShare()">↗ Share</button>
+  </div>
+</div>
+
 <!-- Portrait lock — shown in landscape on phones -->
 <div id="rotateOverlay">
   <div class="rot-icon">📱</div>
@@ -1915,6 +2163,8 @@ async function _finishSignIn(user, profile){
     }
     hideAuthOverlay();
     setupNotifications();
+    // Show programme completion overlay if the block has ended
+    setTimeout(checkProgrammeComplete, 600);
   }catch(err){
     console.error('_finishSignIn error:', err);
     showAuthOverlay();
@@ -2563,6 +2813,8 @@ function completeDay(dayId){
   appData.sessions[today][dayId]._completed = new Date().toISOString();
   saveData(appData);
   renderDay(); renderTabs(); updateProg();
+  // Check if the whole programme has ended (runs after the data save)
+  setTimeout(checkProgrammeComplete, 400);
 }
 
 const DEFAULT_DAYS = [
@@ -3111,11 +3363,14 @@ function renderExerciseProgress(){
     return `<tr><td>${formatDate(r.date)}</td><td>${chips}</td></tr>`;
   }).join('') : `<tr><td colspan="2" style="color:var(--muted2);padding-top:12px;font-size:10px;letter-spacing:1px;">NO DATA FOR THIS EXERCISE YET</td></tr>`;
 
+  const chart = renderProgressChart(rows, progExKey);
+
   return `<div class="ex-prog-section">
     <div class="ex-prog-title">Exercise Progress</div>
     <select class="ex-prog-select" onchange="progExKey=this.value;renderHist()">
       ${options}
     </select>
+    ${chart}
     <table class="ex-prog-table">
       <thead><tr><th>Date</th><th>Sets &nbsp;<span style="color:var(--accent2);font-size:7px">● = best set</span></th></tr></thead>
       <tbody>${tableRows}</tbody>
@@ -3399,6 +3654,278 @@ function calc1RM(dayId, exIndex){
   return best > 0 ? Math.round(best) : null;
 }
 
+// ── PROGRESS CHART ──────────────────────────────────────────────────────────
+function renderProgressChart(rows, exerciseName){
+  // rows = [{date, sets, bestIdx}] sorted newest-first — reverse for chronological
+  const chrono = [...rows].reverse();
+
+  // Compute best estimated 1RM per session
+  const points = chrono.map(r => {
+    let best1rm = 0;
+    for(const s of r.sets){
+      if(s && s.wt > 0 && s.reps > 0 && s.reps <= 15){
+        const e = s.wt * (1 + s.reps / 30);
+        if(e > best1rm) best1rm = e;
+      }
+    }
+    return { date: r.date, val: best1rm > 0 ? Math.round(best1rm) : null };
+  }).filter(p => p.val !== null);
+
+  if(points.length < 2){
+    return `<div class="prog-chart-wrap">
+      <div class="prog-chart-title">Estimated 1RM trend</div>
+      <div class="prog-chart-empty">Log ${Math.max(0, 2 - points.length)} more session${points.length === 1 ? '' : 's'} to see your trend</div>
+    </div>`;
+  }
+
+  const W = 320, H = 80, PAD = { t:10, b:20, l:36, r:10 };
+  const innerW = W - PAD.l - PAD.r;
+  const innerH = H - PAD.t - PAD.b;
+  const vals = points.map(p => p.val);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+  const pb = maxV;
+
+  const xOf = (i) => PAD.l + (i / (points.length - 1)) * innerW;
+  const yOf = (v) => PAD.t + innerH - ((v - minV) / range) * innerH;
+
+  // Smooth polyline
+  const ptStr = points.map((p, i) => `${xOf(i).toFixed(1)},${yOf(p.val).toFixed(1)}`).join(' ');
+
+  // Area fill path
+  const firstX = xOf(0).toFixed(1), lastX = xOf(points.length-1).toFixed(1);
+  const baseY  = (PAD.t + innerH).toFixed(1);
+  const areaPath = `M ${firstX},${baseY} ` +
+    points.map((p, i) => `L ${xOf(i).toFixed(1)},${yOf(p.val).toFixed(1)}`).join(' ') +
+    ` L ${lastX},${baseY} Z`;
+
+  // Y-axis ticks
+  const yTicks = [minV, Math.round((minV + maxV) / 2), maxV].map(v =>
+    `<text x="${(PAD.l - 4).toFixed(0)}" y="${yOf(v).toFixed(1)}" text-anchor="end"
+      font-family="DM Mono,monospace" font-size="7" fill="rgba(74,96,112,.8)">${v}</text>`
+  ).join('');
+
+  // X-axis labels (first + last)
+  const fmtShort = (iso) => { const [,m,d] = iso.split('-'); return `${['J','F','M','A','M','J','J','A','S','O','N','D'][+m-1]}${+d}`; };
+  const xLabels = [0, points.length - 1].map(i =>
+    `<text x="${xOf(i).toFixed(1)}" y="${(PAD.t + innerH + 13).toFixed(1)}" text-anchor="${i===0?'start':'end'}"
+      font-family="DM Mono,monospace" font-size="7" fill="rgba(74,96,112,.8)">${fmtShort(points[i].date)}</text>`
+  ).join('');
+
+  // Dots + PB marker
+  const dots = points.map((p, i) => {
+    const isPB = p.val === pb && i === points.map(q=>q.val).lastIndexOf(pb);
+    return isPB
+      ? `<circle cx="${xOf(i).toFixed(1)}" cy="${yOf(p.val).toFixed(1)}" r="4" fill="#4af0b8" stroke="#0d1117" stroke-width="1.5"/>
+         <text x="${xOf(i).toFixed(1)}" y="${(yOf(p.val) - 7).toFixed(1)}" text-anchor="middle"
+           font-family="DM Mono,monospace" font-size="7" fill="#4af0b8">${p.val}kg</text>`
+      : `<circle cx="${xOf(i).toFixed(1)}" cy="${yOf(p.val).toFixed(1)}" r="2.5" fill="rgba(74,240,184,.45)"/>`;
+  }).join('');
+
+  const trend = vals.length >= 2 ? vals[vals.length-1] - vals[0] : 0;
+  const trendStr = trend > 0 ? `▲ +${trend}kg est. 1RM since first log` : trend < 0 ? `▼ ${trend}kg est. 1RM since first log` : 'Est. 1RM holding steady';
+
+  return `<div class="prog-chart-wrap">
+    <div class="prog-chart-title">Estimated 1RM trend</div>
+    <svg class="prog-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4af0b8" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#4af0b8" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#chartFill)"/>
+      <polyline points="${ptStr}" fill="none" stroke="#4af0b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${yTicks}
+      ${xLabels}
+      ${dots}
+    </svg>
+    <div class="prog-chart-pb" style="color:${trend>=0?'var(--accent2)':'#ff7a6a'}">${trendStr}</div>
+  </div>`;
+}
+
+// ── PROGRAMME COMPLETION ────────────────────────────────────────────────────
+function checkProgrammeComplete(){
+  if(!_programStartDate || !_programWeeks) return;
+  const today = getToday();
+  const progEndStr = addDays(_programStartDate, _programWeeks * 7 - 1);
+  if(today <= progEndStr) return; // programme still running
+
+  // Already acknowledged?
+  const ackKey = `_progCompleteAcked_${_programStartDate}`;
+  if(appData[ackKey]) return;
+
+  // Count stats
+  let sessionsCompleted = 0, totalSets = 0;
+  const allDates = Object.keys(appData.sessions || {}).sort();
+  let weeksWithActivity = new Set();
+
+  for(const date of allDates){
+    if(date < _programStartDate || date > progEndStr) continue;
+    const daySessions = appData.sessions[date];
+    let anyCompleted = false;
+    for(const dayId of Object.keys(daySessions)){
+      const ds = daySessions[dayId];
+      if(ds._completed){ anyCompleted = true; }
+      // count sets
+      const dayDef = DAYS.find(d => String(d.id) === String(dayId));
+      if(dayDef){
+        dayDef.exercises.forEach((_,i)=>{
+          const sets = ds[i];
+          if(sets && Array.isArray(sets)) totalSets += sets.filter(s=>s&&(s.wt||s.reps)).length;
+        });
+      }
+    }
+    if(anyCompleted){
+      sessionsCompleted++;
+      // Week number
+      const d0 = new Date(_programStartDate + 'T00:00:00');
+      const dN = new Date(date + 'T00:00:00');
+      const weekNum = Math.floor((dN - d0) / (7 * 86400000));
+      weeksWithActivity.add(weekNum);
+    }
+  }
+
+  // Best 1RM across all exercises in the programme
+  let bestRM = 0, bestRMName = '';
+  DAYS.forEach(day => {
+    day.exercises.forEach((ex, ei) => {
+      for(const date of allDates){
+        if(date < _programStartDate || date > progEndStr) continue;
+        const sets = appData.sessions[date]?.[day.id]?.[ei];
+        if(!sets || !Array.isArray(sets)) continue;
+        for(const s of sets){
+          if(s && s.wt > 0 && s.reps > 0 && s.reps <= 15){
+            const est = Math.round(s.wt * (1 + s.reps / 30));
+            if(est > bestRM){ bestRM = est; bestRMName = ex.name; }
+          }
+        }
+      }
+    });
+  });
+
+  const weeksCount = weeksWithActivity.size;
+
+  const el = document.getElementById('progCompleteOverlay');
+  if(!el) return;
+
+  el.innerHTML = `
+    <div class="pco-badge">Programme Complete</div>
+    <div class="pco-title">${_programWeeks}-Week<br>Block Done</div>
+    <div class="pco-sub">You finished your programme.<br>Here's what you put in:</div>
+    <div class="pco-stats">
+      <div class="pco-stat">
+        <div class="pco-stat-val">${sessionsCompleted}</div>
+        <div class="pco-stat-lbl">Sessions</div>
+      </div>
+      <div class="pco-stat">
+        <div class="pco-stat-val">${totalSets}</div>
+        <div class="pco-stat-lbl">Sets Logged</div>
+      </div>
+      <div class="pco-stat">
+        <div class="pco-stat-val">${weeksCount}</div>
+        <div class="pco-stat-lbl">Active Weeks</div>
+      </div>
+      <div class="pco-stat highlight">
+        <div class="pco-stat-val">${bestRM > 0 ? bestRM + 'kg' : '—'}</div>
+        <div class="pco-stat-lbl">${bestRM > 0 ? 'Top Est. 1RM' : 'Log sets for 1RM'}</div>
+      </div>
+    </div>
+    ${bestRM > 0 && bestRMName ? `<div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);margin-bottom:24px;text-transform:uppercase;">${bestRMName}</div>` : ''}
+    <div class="pco-btns">
+      <button class="pco-btn-primary" onclick="dismissProgrammeComplete(true)">Start New Programme →</button>
+      <button class="pco-btn-secondary" onclick="dismissProgrammeComplete(false)">Keep Training with This Plan</button>
+    </div>`;
+  el.classList.add('show');
+}
+
+function dismissProgrammeComplete(startNew){
+  const ackKey = `_progCompleteAcked_${_programStartDate}`;
+  appData[ackKey] = true;
+  saveData(appData);
+  const el = document.getElementById('progCompleteOverlay');
+  if(el) el.classList.remove('show');
+  if(startNew) redoPlan();
+}
+
+// ── SHARE SESSION ───────────────────────────────────────────────────────────
+let _shareText = '';
+
+function shareSession(dayId){
+  const day = DAYS.find(d => d.id === dayId);
+  if(!day) return;
+  const today = getToday();
+  const sessionData = appData.sessions[today]?.[dayId] || {};
+  const typeColors = { push:'#ff4e3a', pull:'#3ab8ff', legs:'#ffe03a', rest:'#334155' };
+  const typeCol = typeColors[day.type] || '#ff4e3a';
+
+  // Build exercise rows
+  let totalSets = 0;
+  const exRows = day.exercises.map((ex, i) => {
+    const sets = (sessionData[i] || []).filter(s => s && (s.wt || s.reps));
+    if(!sets.length) return '';
+    totalSets += sets.length;
+    const bestSet = sets.reduce((b, s) => ((s.wt||0) > (b.wt||0) ? s : b), sets[0]);
+    const rm = bestSet.wt > 0 && bestSet.reps > 0 && bestSet.reps <= 15
+      ? Math.round(bestSet.wt * (1 + bestSet.reps / 30)) : null;
+    const bestStr = bestSet.wt ? `${bestSet.wt}kg × ${bestSet.reps || '?'}` : `${bestSet.reps || '?'} reps`;
+    const rmStr = rm ? ` · ~${rm}kg 1RM` : '';
+    return `<div class="share-card-ex">
+      <div class="share-card-ex-name">${ex.name}</div>
+      <div class="share-card-ex-best">${bestStr}${rmStr}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const [,mo,dy] = today.split('-');
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateLabel = `${MONTHS[+mo-1]} ${+dy} ${today.split('-')[0]}`;
+  const typeLbl = (day.type||'push').toUpperCase();
+
+  const card = document.getElementById('shareCard');
+  if(!card) return;
+  card.innerHTML = `
+    <div class="share-card-hdr">
+      <div class="share-card-badge" style="background:${typeCol}20;color:${typeCol};border:1px solid ${typeCol}40">${typeLbl}</div>
+      <div class="share-card-name">${day.name}</div>
+      <div class="share-card-date">${dateLabel}</div>
+    </div>
+    <div class="share-card-body">
+      ${exRows || '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);letter-spacing:1px;padding:8px 0">NO SETS LOGGED YET</div>'}
+    </div>
+    <div class="share-card-footer">
+      <div class="share-card-total"><span>${totalSets}</span> sets logged</div>
+      <div class="share-card-brand">PLAN PPL</div>
+    </div>`;
+
+  // Native share text fallback
+  const lines = day.exercises.map((ex, i) => {
+    const sets = (sessionData[i] || []).filter(s => s && (s.wt || s.reps));
+    if(!sets.length) return null;
+    const best = sets.reduce((b,s)=>((s.wt||0)>(b.wt||0)?s:b), sets[0]);
+    return `${ex.name}: ${best.wt ? best.wt+'kg × '+best.reps : best.reps+' reps'}`;
+  }).filter(Boolean);
+  _shareText = `${day.name} · ${dateLabel}\n${lines.join('\n')}\n${totalSets} sets · Plan PPL`;
+
+  const nativeBtn = document.getElementById('shareNativeBtn');
+  if(nativeBtn){
+    if(navigator.share){ nativeBtn.classList.add('visible'); }
+    else { nativeBtn.classList.remove('visible'); }
+  }
+
+  document.getElementById('shareOverlay').classList.add('show');
+}
+
+function closeShare(){
+  document.getElementById('shareOverlay').classList.remove('show');
+}
+
+async function doNativeShare(){
+  try{
+    await navigator.share({ title: 'Plan PPL Session', text: _shareText });
+  }catch(e){ /* user cancelled */ }
+}
+
 function handleSetInput(dayId, exIndex, setIndex, changedEl){
   const row  = changedEl.closest('.set-row');
   const inputs = row.querySelectorAll('.set-input');
@@ -3545,6 +4072,7 @@ function renderDay(){
     <div class="win-banner ${complete?'show':''}">
       <h3>🎯 SESSION COMPLETE</h3>
       <p>${d.name} done. Cold plunge → infrared sauna. Go recover.</p>
+      <button class="win-share-btn" onclick="shareSession(${d.id})">📤 Share Session</button>
     </div>
 
     <div class="complete-area">
