@@ -1600,102 +1600,201 @@ body{
 #shareOverlay{
   display:none;
   position:fixed;inset:0;z-index:600;
-  background:rgba(8,11,15,.92);
+  background:rgba(4,6,9,.96);
+  backdrop-filter:blur(8px);
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  padding:24px 20px;
+  padding:20px 16px;
+  gap:0;
 }
 #shareOverlay.show{ display:flex; }
+
+/* ── Share card shell ── */
 .share-card{
   background:#0d1117;
-  border:1px solid var(--border2);
-  border-radius:16px;
-  width:100%;max-width:360px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  width:100%;max-width:380px;
+  overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.7);
+}
+
+/* ── Hero header ── */
+.sc-hero{
+  padding:20px 22px 18px;
+  position:relative;
   overflow:hidden;
 }
-.share-card-hdr{
-  padding:18px 20px 14px;
-  border-bottom:1px solid var(--border);
+.sc-hero::after{
+  content:'';
+  position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;
 }
-.share-card-badge{
+.sc-hero-top{
+  display:flex;align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:14px;
+}
+.sc-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:16px;letter-spacing:3px;
+  color:rgba(255,255,255,.35);
+}
+.sc-logo span{ color:var(--accent); }
+.sc-date{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:rgba(255,255,255,.3);
+  text-align:right;line-height:1.6;
+}
+.sc-day-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:52px;letter-spacing:4px;
+  color:var(--white);line-height:.95;
+  margin-bottom:10px;
+}
+.sc-type-row{
+  display:flex;align-items:center;gap:10px;
+}
+.sc-type-pill{
   font-family:'DM Mono',monospace;
   font-size:9px;letter-spacing:2px;
   text-transform:uppercase;
-  padding:3px 9px;border-radius:10px;
-  display:inline-block;margin-bottom:8px;
+  padding:4px 11px;border-radius:20px;
+  border:1px solid;
 }
-.share-card-name{
+.sc-blurb-inline{
+  font-family:'DM Sans',sans-serif;
+  font-size:11px;color:rgba(255,255,255,.4);
+  font-style:italic;
+}
+
+/* ── Stats bar ── */
+.sc-stats{
+  display:flex;align-items:stretch;
+  border-top:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.sc-stat{
+  flex:1;padding:12px 0;
+  text-align:center;
+}
+.sc-stat+.sc-stat{
+  border-left:1px solid rgba(255,255,255,.06);
+}
+.sc-stat-v{
   font-family:'Bebas Neue',sans-serif;
-  font-size:32px;letter-spacing:3px;
+  font-size:26px;letter-spacing:1px;
   color:var(--white);line-height:1;
 }
-.share-card-date{
+.sc-stat-v.hi{ color:var(--accent2); }
+.sc-stat-l{
   font-family:'DM Mono',monospace;
-  font-size:9px;letter-spacing:1px;
-  color:var(--muted);margin-top:4px;
+  font-size:7px;letter-spacing:1.5px;
+  color:rgba(255,255,255,.3);
+  text-transform:uppercase;
+  margin-top:3px;
 }
-.share-card-body{ padding:14px 20px 16px; }
-.share-card-ex{
-  display:flex;align-items:flex-start;
-  justify-content:space-between;
-  padding:8px 0;
-  border-bottom:1px solid var(--border);
+
+/* ── Exercise list ── */
+.sc-exlist{ padding:4px 0 2px; }
+.sc-ex{
+  display:flex;align-items:center;
   gap:12px;
+  padding:9px 22px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  position:relative;
 }
-.share-card-ex:last-child{ border-bottom:none; }
-.share-card-ex-name{
+.sc-ex:last-child{ border-bottom:none; }
+.sc-ex-accent{
+  width:2px;height:100%;min-height:28px;
+  border-radius:2px;
+  flex-shrink:0;
+  opacity:.5;
+}
+.sc-ex-info{ flex:1;min-width:0; }
+.sc-ex-name{
   font-family:'DM Mono',monospace;
   font-size:9px;letter-spacing:.5px;
-  color:var(--white);text-transform:uppercase;
-  flex:1;line-height:1.4;
+  color:rgba(255,255,255,.7);
+  text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.share-card-ex-best{
+.sc-ex-rm{
   font-family:'DM Mono',monospace;
-  font-size:10px;color:var(--accent2);
+  font-size:8px;letter-spacing:.5px;
+  color:var(--accent2);opacity:.7;
+  margin-top:2px;
+}
+.sc-ex-best{
+  font-family:'DM Mono',monospace;
+  font-size:11px;font-weight:500;
+  color:var(--white);
   white-space:nowrap;
   text-align:right;
+  flex-shrink:0;
 }
-.share-card-footer{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 20px;
-  background:var(--panel2);
-  border-top:1px solid var(--border);
+
+/* ── Footer ── */
+.sc-footer{
+  padding:14px 22px 16px;
+  background:rgba(255,255,255,.02);
+  border-top:1px solid rgba(255,255,255,.05);
+  display:flex;align-items:center;
+  justify-content:space-between;gap:12px;
 }
-.share-card-total{
+.sc-footer-quote{
+  font-family:'DM Sans',sans-serif;
+  font-size:10px;color:rgba(255,255,255,.3);
+  font-style:italic;line-height:1.4;
+  flex:1;
+}
+.sc-footer-brand{
+  text-align:right;flex-shrink:0;
+}
+.sc-footer-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:14px;letter-spacing:2px;
+  color:var(--accent);display:block;line-height:1;
+}
+.sc-footer-tag{
+  font-family:'DM Mono',monospace;
+  font-size:7px;letter-spacing:1px;
+  color:rgba(255,255,255,.2);text-transform:uppercase;
+  display:block;margin-top:2px;
+}
+
+/* ── Screenshot hint + buttons ── */
+.share-hint{
   font-family:'DM Mono',monospace;
   font-size:9px;letter-spacing:1px;
-  color:var(--muted);text-transform:uppercase;
-}
-.share-card-total span{
-  color:var(--white);font-size:13px;
-  font-family:'Bebas Neue',sans-serif;
-  letter-spacing:1px;
-}
-.share-card-brand{
-  font-family:'DM Mono',monospace;
-  font-size:8px;letter-spacing:2px;
-  color:var(--accent);opacity:.6;
+  color:rgba(255,255,255,.25);
   text-transform:uppercase;
+  margin-top:14px;margin-bottom:4px;
+  text-align:center;
 }
 .share-overlay-btns{
-  display:flex;gap:10px;margin-top:16px;
-  width:100%;max-width:360px;
+  display:flex;gap:10px;margin-top:8px;
+  width:100%;max-width:380px;
 }
 .share-dismiss{
   flex:1;background:transparent;
-  color:var(--muted);border:1px solid var(--border);
-  border-radius:10px;padding:12px;cursor:pointer;
+  color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:13px;cursor:pointer;
   font-family:'DM Mono',monospace;font-size:11px;
-  letter-spacing:1px;
+  letter-spacing:1px;transition:all .2s;
 }
+.share-dismiss:hover{ color:var(--white);border-color:rgba(255,255,255,.25); }
 .share-native{
   flex:1;background:var(--accent);color:#080b0f;
-  border:none;border-radius:10px;padding:12px;cursor:pointer;
+  border:none;border-radius:10px;padding:13px;cursor:pointer;
   font-family:'DM Mono',monospace;font-size:11px;
   font-weight:600;letter-spacing:1px;
-  display:none;
+  display:none;transition:opacity .2s;
 }
+.share-native:hover{ opacity:.85; }
 .share-native.visible{ display:block; }
 
 /* ── PROGRAM TIMELINE ── */
@@ -1967,6 +2066,7 @@ body{
 <!-- Share session overlay -->
 <div id="shareOverlay">
   <div class="share-card" id="shareCard"></div>
+  <div class="share-hint" id="shareHint">📸 screenshot to share</div>
   <div class="share-overlay-btns">
     <button class="share-dismiss" onclick="closeShare()">✕ Close</button>
     <button class="share-native" id="shareNativeBtn" onclick="doNativeShare()">↗ Share</button>
@@ -3852,6 +3952,13 @@ function dismissProgrammeComplete(startNew){
 // ── SHARE SESSION ───────────────────────────────────────────────────────────
 let _shareText = '';
 
+const _SHARE_QUOTES = {
+  push: ['Chest, shoulders, triceps. Done.', 'Pressed. Every. Rep.', 'Push days hit different.', 'Upper body built, not bought.'],
+  pull: ['Back straight. Head right. Reps done.', 'Pull more than you push. In the gym and in life.', 'Every pull a little stronger.', 'Lat gains loading…'],
+  legs:  ['Never skipped.', 'Legs don\'t lie.', 'The grind is real. So are the gains.', 'Quad city, population: you.'],
+  rest:  ['Recovery is training.', 'Rest hard. Come back harder.'],
+};
+
 function shareSession(dayId){
   const day = DAYS.find(d => d.id === dayId);
   if(!day) return;
@@ -3859,53 +3966,94 @@ function shareSession(dayId){
   const sessionData = appData.sessions[today]?.[dayId] || {};
   const typeColors = { push:'#ff4e3a', pull:'#3ab8ff', legs:'#ffe03a', rest:'#334155' };
   const typeCol = typeColors[day.type] || '#ff4e3a';
+  const typeLbl = (day.type || 'push').toUpperCase();
 
-  // Build exercise rows
-  let totalSets = 0;
+  // Build exercise rows + stats
+  let totalSets = 0, exCount = 0, topRM = 0;
   const exRows = day.exercises.map((ex, i) => {
     const sets = (sessionData[i] || []).filter(s => s && (s.wt || s.reps));
     if(!sets.length) return '';
     totalSets += sets.length;
+    exCount++;
     const bestSet = sets.reduce((b, s) => ((s.wt||0) > (b.wt||0) ? s : b), sets[0]);
     const rm = bestSet.wt > 0 && bestSet.reps > 0 && bestSet.reps <= 15
       ? Math.round(bestSet.wt * (1 + bestSet.reps / 30)) : null;
+    if(rm && rm > topRM) topRM = rm;
     const bestStr = bestSet.wt ? `${bestSet.wt}kg × ${bestSet.reps || '?'}` : `${bestSet.reps || '?'} reps`;
-    const rmStr = rm ? ` · ~${rm}kg 1RM` : '';
-    return `<div class="share-card-ex">
-      <div class="share-card-ex-name">${ex.name}</div>
-      <div class="share-card-ex-best">${bestStr}${rmStr}</div>
+    return `<div class="sc-ex">
+      <div class="sc-ex-accent" style="background:${typeCol}"></div>
+      <div class="sc-ex-info">
+        <div class="sc-ex-name">${ex.name}</div>
+        ${rm ? `<div class="sc-ex-rm">~${rm}kg est. 1RM</div>` : ''}
+      </div>
+      <div class="sc-ex-best">${bestStr}</div>
     </div>`;
   }).filter(Boolean).join('');
 
-  const [,mo,dy] = today.split('-');
+  const [yr, mo, dy] = today.split('-');
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateLabel = `${MONTHS[+mo-1]} ${+dy} ${today.split('-')[0]}`;
-  const typeLbl = (day.type||'push').toUpperCase();
+  const DAYS_OF_WEEK = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dow = DAYS_OF_WEEK[new Date(`${today}T12:00:00Z`).getUTCDay()];
+  const dateLabel = `${dow}, ${MONTHS[+mo-1]} ${+dy} ${yr}`;
+
+  // Random quote for this day type
+  const quotes = _SHARE_QUOTES[day.type] || _SHARE_QUOTES.push;
+  const quote = quotes[Math.floor(Math.random() * quotes.length)];
+
+  const rmStatVal = topRM > 0 ? `${topRM}kg` : '—';
+  const heroGradient = `linear-gradient(150deg, ${typeCol}28 0%, #0d1117 55%)`;
 
   const card = document.getElementById('shareCard');
   if(!card) return;
+
   card.innerHTML = `
-    <div class="share-card-hdr">
-      <div class="share-card-badge" style="background:${typeCol}20;color:${typeCol};border:1px solid ${typeCol}40">${typeLbl}</div>
-      <div class="share-card-name">${day.name}</div>
-      <div class="share-card-date">${dateLabel}</div>
+    <div class="sc-hero" style="background:${heroGradient}">
+      <div class="sc-hero-top">
+        <div class="sc-logo">PLAN <span>PPL</span></div>
+        <div class="sc-date">${dateLabel}</div>
+      </div>
+      <div class="sc-day-name">${day.name}</div>
+      <div class="sc-type-row">
+        <div class="sc-type-pill" style="color:${typeCol};border-color:${typeCol}50;background:${typeCol}15">${typeLbl} SESSION</div>
+        <div class="sc-blurb-inline">${quote}</div>
+      </div>
     </div>
-    <div class="share-card-body">
-      ${exRows || '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);letter-spacing:1px;padding:8px 0">NO SETS LOGGED YET</div>'}
+
+    <div class="sc-stats">
+      <div class="sc-stat">
+        <div class="sc-stat-v">${totalSets}</div>
+        <div class="sc-stat-l">Sets</div>
+      </div>
+      <div class="sc-stat">
+        <div class="sc-stat-v">${exCount}</div>
+        <div class="sc-stat-l">Exercises</div>
+      </div>
+      <div class="sc-stat">
+        <div class="sc-stat-v hi">${rmStatVal}</div>
+        <div class="sc-stat-l">Top 1RM</div>
+      </div>
     </div>
-    <div class="share-card-footer">
-      <div class="share-card-total"><span>${totalSets}</span> sets logged</div>
-      <div class="share-card-brand">PLAN PPL</div>
+
+    <div class="sc-exlist">
+      ${exRows || `<div style="padding:16px 22px;font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.25);letter-spacing:1px;text-transform:uppercase">No sets logged yet</div>`}
+    </div>
+
+    <div class="sc-footer">
+      <div class="sc-footer-quote">"${quote}"</div>
+      <div class="sc-footer-brand">
+        <span class="sc-footer-name">PLAN PPL</span>
+        <span class="sc-footer-tag">AI Training</span>
+      </div>
     </div>`;
 
   // Native share text fallback
   const lines = day.exercises.map((ex, i) => {
     const sets = (sessionData[i] || []).filter(s => s && (s.wt || s.reps));
     if(!sets.length) return null;
-    const best = sets.reduce((b,s)=>((s.wt||0)>(b.wt||0)?s:b), sets[0]);
-    return `${ex.name}: ${best.wt ? best.wt+'kg × '+best.reps : best.reps+' reps'}`;
+    const best = sets.reduce((b, s) => ((s.wt||0) > (b.wt||0) ? s : b), sets[0]);
+    return `${ex.name}: ${best.wt ? best.wt + 'kg × ' + best.reps : best.reps + ' reps'}`;
   }).filter(Boolean);
-  _shareText = `${day.name} · ${dateLabel}\n${lines.join('\n')}\n${totalSets} sets · Plan PPL`;
+  _shareText = `${day.name} · ${dateLabel}\n\n${lines.join('\n')}\n\n${totalSets} sets logged · Plan PPL`;
 
   const nativeBtn = document.getElementById('shareNativeBtn');
   if(nativeBtn){
