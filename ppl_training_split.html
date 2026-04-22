@@ -3234,7 +3234,7 @@ let _exGuideCache = null;
 function _getGuideCache(){ if(!_exGuideCache){ try{ _exGuideCache=JSON.parse(localStorage.getItem('_exGuideCache')||'{}'); }catch(e){ _exGuideCache={}; } } return _exGuideCache; }
 function _saveGuideCache(){ try{ localStorage.setItem('_exGuideCache', JSON.stringify(_exGuideCache)); }catch(e){} }
 
-const EXERCISE_GUIDE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/super-action';
+const EXERCISE_GUIDE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/exercise-guide';
 
 function syncActiveDayToToday(){
   // Use UTC day (consistent with getToday() which is also UTC)
@@ -4407,13 +4407,17 @@ function showExerciseGuide(exName){
     fetchExerciseGuide(exName).then(guide => {
       _renderGuide(exName, guide);
     }).catch(err => {
+      console.error('exercise-guide fetch failed:', err);
       content.innerHTML = `
         <div class="ex-guide-hdr">
           <div class="ex-guide-name">${exName}</div>
         </div>
         <div class="ex-guide-body">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted);text-align:center;padding:20px 0">
-            Could not load guide — check your connection and try again.
+          <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:#ff6b4a;text-align:center;padding:16px 0 4px">
+            Could not load guide
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;color:var(--muted);text-align:center;padding:0 0 16px;word-break:break-all">
+            ${err.message || 'Unknown error'}
           </div>
           <a class="ex-guide-yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(exName+' exercise tutorial')}" target="_blank" rel="noopener">
             ▶ Watch on YouTube
@@ -4465,6 +4469,7 @@ function _renderGuide(exName, guide){
 
 async function fetchExerciseGuide(exName){
   const { data:{ session } } = await _sb.auth.getSession();
+  if(!session) throw new Error('Not signed in — please sign in and try again');
   const res = await fetch(EXERCISE_GUIDE_FN, {
     method: 'POST',
     headers: {
