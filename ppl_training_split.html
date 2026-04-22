@@ -1600,103 +1600,157 @@ body{
 #shareOverlay{
   display:none;
   position:fixed;inset:0;z-index:600;
-  background:rgba(8,11,15,.92);
+  background:rgba(8,11,15,.95);
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  padding:24px 20px;
+  padding:20px 20px;
+  overflow-y:auto;
 }
 #shareOverlay.show{ display:flex; }
 .share-card{
   background:#0d1117;
   border:1px solid var(--border2);
-  border-radius:16px;
-  width:100%;max-width:360px;
+  border-radius:20px;
+  width:100%;max-width:380px;
   overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+/* Coloured top bar — set via inline style */
+.share-card-topbar{
+  height:5px;width:100%;
 }
 .share-card-hdr{
-  padding:18px 20px 14px;
-  border-bottom:1px solid var(--border);
+  padding:20px 22px 16px;
+  position:relative;
+}
+.share-card-hdr-top{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
 }
 .share-card-badge{
   font-family:'DM Mono',monospace;
-  font-size:9px;letter-spacing:2px;
+  font-size:8px;letter-spacing:2px;
   text-transform:uppercase;
-  padding:3px 9px;border-radius:10px;
-  display:inline-block;margin-bottom:8px;
+  padding:3px 10px;border-radius:4px;
+}
+.share-card-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:14px;letter-spacing:3px;
+  color:var(--accent);opacity:.7;
 }
 .share-card-name{
   font-family:'Bebas Neue',sans-serif;
-  font-size:32px;letter-spacing:3px;
-  color:var(--white);line-height:1;
+  font-size:42px;letter-spacing:3px;
+  color:var(--white);line-height:.95;
+  margin-bottom:6px;
+}
+.share-card-subrow{
+  display:flex;align-items:center;gap:10px;
 }
 .share-card-date{
   font-family:'DM Mono',monospace;
   font-size:9px;letter-spacing:1px;
-  color:var(--muted);margin-top:4px;
+  color:var(--muted);
 }
-.share-card-body{ padding:14px 20px 16px; }
+.share-card-topstat{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:.5px;
+  color:var(--accent2);
+  margin-left:auto;
+}
+.share-card-divider{
+  height:1px;background:var(--border);margin:0 22px;
+}
+.share-card-body{ padding:12px 22px 14px; }
 .share-card-ex{
   display:flex;align-items:flex-start;
   justify-content:space-between;
-  padding:8px 0;
-  border-bottom:1px solid var(--border);
+  padding:7px 0;
+  border-bottom:1px solid rgba(30,42,56,.7);
   gap:12px;
 }
 .share-card-ex:last-child{ border-bottom:none; }
 .share-card-ex-name{
   font-family:'DM Mono',monospace;
-  font-size:9px;letter-spacing:.5px;
-  color:var(--white);text-transform:uppercase;
-  flex:1;line-height:1.4;
+  font-size:8px;letter-spacing:.5px;
+  color:rgba(240,244,248,.7);text-transform:uppercase;
+  flex:1;line-height:1.5;
 }
 .share-card-ex-best{
   font-family:'DM Mono',monospace;
-  font-size:10px;color:var(--accent2);
-  white-space:nowrap;
+  font-size:9px;color:var(--accent2);
+  white-space:nowrap;text-align:right;
+  line-height:1.5;
+}
+.share-card-ex-rm{
+  display:block;
+  font-size:8px;color:var(--muted);
   text-align:right;
 }
 .share-card-footer{
   display:flex;align-items:center;justify-content:space-between;
-  padding:12px 20px;
-  background:var(--panel2);
+  padding:12px 22px;
+  background:rgba(255,255,255,.03);
   border-top:1px solid var(--border);
 }
-.share-card-total{
+.share-card-footer-sets{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;letter-spacing:1px;
+  line-height:1;
+}
+.share-card-footer-lbl{
+  font-family:'DM Mono',monospace;
+  font-size:7px;letter-spacing:1px;
+  color:var(--muted);text-transform:uppercase;
+  margin-top:2px;
+}
+.share-card-footer-brand{
+  text-align:right;
+}
+.share-card-footer-brandname{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px;letter-spacing:3px;
+  color:var(--accent);
+}
+.share-card-footer-tagline{
+  font-family:'DM Mono',monospace;
+  font-size:7px;letter-spacing:1px;
+  color:var(--muted2);text-transform:uppercase;
+  margin-top:1px;
+}
+.share-overlay-hint{
   font-family:'DM Mono',monospace;
   font-size:9px;letter-spacing:1px;
-  color:var(--muted);text-transform:uppercase;
-}
-.share-card-total span{
-  color:var(--white);font-size:13px;
-  font-family:'Bebas Neue',sans-serif;
-  letter-spacing:1px;
-}
-.share-card-brand{
-  font-family:'DM Mono',monospace;
-  font-size:8px;letter-spacing:2px;
-  color:var(--accent);opacity:.6;
-  text-transform:uppercase;
+  color:var(--muted2);text-transform:uppercase;
+  margin-top:12px;text-align:center;
 }
 .share-overlay-btns{
-  display:flex;gap:10px;margin-top:16px;
-  width:100%;max-width:360px;
+  display:flex;gap:8px;margin-top:10px;
+  width:100%;max-width:380px;
 }
-.share-dismiss{
-  flex:1;background:transparent;
-  color:var(--muted);border:1px solid var(--border);
-  border-radius:10px;padding:12px;cursor:pointer;
+.share-btn{
+  flex:1;border-radius:10px;padding:13px 8px;cursor:pointer;
   font-family:'DM Mono',monospace;font-size:11px;
-  letter-spacing:1px;
+  font-weight:600;letter-spacing:1px;border:none;
+  transition:opacity .2s;
 }
-.share-native{
-  flex:1;background:var(--accent);color:#080b0f;
-  border:none;border-radius:10px;padding:12px;cursor:pointer;
-  font-family:'DM Mono',monospace;font-size:11px;
-  font-weight:600;letter-spacing:1px;
+.share-btn:hover{ opacity:.85; }
+.share-btn-close{
+  background:var(--panel2);color:var(--muted);
+  border:1px solid var(--border) !important;
+}
+.share-btn-save{
+  background:var(--panel2);color:var(--white);
+  border:1px solid var(--border2) !important;
   display:none;
 }
-.share-native.visible{ display:block; }
+.share-btn-save.visible{ display:block; }
+.share-btn-share{
+  background:var(--accent);color:#080b0f;
+  display:none;
+}
+.share-btn-share.visible{ display:block; }
 
 /* ── PROGRAM TIMELINE ── */
 .ptl-wrap{ padding:0 16px 24px; }
@@ -1707,10 +1761,18 @@ body{
   border-bottom:1px solid var(--border);
   margin-bottom:2px;
 }
-.ptl-week.current>.ptl-week-hdr{ border-bottom-color:var(--border2); }
+.ptl-week.current{
+  border-left:3px solid var(--accent2);
+  padding-left:12px;
+  margin-left:-16px;
+  background:rgba(74,240,184,.03);
+  border-radius:0 6px 6px 0;
+}
+.ptl-week.current>.ptl-week-hdr{ border-bottom-color:rgba(74,240,184,.25); }
 .ptl-week-num{
   font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--white);
 }
+.ptl-week.current>.ptl-week-hdr>.ptl-week-num{ color:var(--accent2); }
 .ptl-week-range{
   font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted2);flex:1;
 }
@@ -1718,6 +1780,26 @@ body{
   font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1.5px;
   padding:2px 7px;border-radius:3px;
   background:rgba(232,240,74,.08);border:1px solid rgba(232,240,74,.25);color:var(--accent);
+}
+.ptl-week-badge.now{
+  background:rgba(74,240,184,.1);border-color:rgba(74,240,184,.35);color:var(--accent2);
+  animation:pulse-now 2s ease-in-out infinite;
+}
+@keyframes pulse-now{
+  0%,100%{ opacity:1; }
+  50%{ opacity:.55; }
+}
+.ptl-week-progressrow{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 0 9px;
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted2);
+  text-transform:uppercase;
+}
+.ptl-week-bar{
+  flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;
+}
+.ptl-week-bar-fill{
+  height:100%;background:var(--accent2);border-radius:2px;
 }
 .ptl-day{
   display:flex;align-items:center;gap:10px;
@@ -1967,9 +2049,11 @@ body{
 <!-- Share session overlay -->
 <div id="shareOverlay">
   <div class="share-card" id="shareCard"></div>
+  <div class="share-overlay-hint" id="shareHint"></div>
   <div class="share-overlay-btns">
-    <button class="share-dismiss" onclick="closeShare()">✕ Close</button>
-    <button class="share-native" id="shareNativeBtn" onclick="doNativeShare()">↗ Share</button>
+    <button class="share-btn share-btn-close" onclick="closeShare()">✕ Close</button>
+    <button class="share-btn share-btn-save" id="shareSaveBtn" onclick="saveShareImage()">⬇ Save</button>
+    <button class="share-btn share-btn-share" id="shareNativeBtn" onclick="doNativeShare()">↗ Share</button>
   </div>
 </div>
 
@@ -2725,12 +2809,34 @@ function renderProgramTimeline(){
       .some(ds=>appData.sessions[ds]);
     const isCurrent = weekStartStr<=today && today<=weekEndStr;
 
+    // For current week: count training days completed vs total training days
+    let weekDoneCount = 0, weekTotalCount = 0;
+    if(isCurrent){
+      for(let di=0; di<7; di++){
+        const ds = addDays(_programStartDate, w*7+di);
+        const dow2 = new Date(ds+'T00:00:00').getDay();
+        const dl = ['SUN','MON','TUE','WED','THU','FRI','SAT'][dow2];
+        const dd = DAYS.find(day=>(day.label||'').toUpperCase()===dl);
+        if(!dd || dd.type==='rest') continue;
+        weekTotalCount++;
+        if(appData.sessions[ds]?.[dd.id]?._completed) weekDoneCount++;
+      }
+    }
+    const progressBar = isCurrent && weekTotalCount > 0 ? `
+      <div class="ptl-week-progressrow">
+        <span>${weekDoneCount}/${weekTotalCount} sessions</span>
+        <div class="ptl-week-bar"><div class="ptl-week-bar-fill" style="width:${Math.round(weekDoneCount/weekTotalCount*100)}%"></div></div>
+      </div>` : '';
+
     html += `<div class="ptl-week${isCurrent?' current':''}${isLastWeek?' final':''}">
       <div class="ptl-week-hdr">
         <span class="ptl-week-num">WEEK ${w+1}</span>
         <span class="ptl-week-range">${formatDate(weekStartStr)} – ${formatDate(weekEndStr)}</span>
-        ${isLastWeek?'<span class="ptl-week-badge">FINAL</span>':''}
-      </div>`;
+        ${isCurrent?'<span class="ptl-week-badge now">▶ YOU ARE HERE</span>':''}
+        ${isLastWeek && !isCurrent?'<span class="ptl-week-badge">FINAL</span>':''}
+        ${isLastWeek && isCurrent?'<span class="ptl-week-badge">FINAL</span>':''}
+      </div>
+      ${progressBar}`;
 
     for(let d=0; d<7; d++){
       const dateStr  = addDays(_programStartDate, w*7+d);
@@ -3850,9 +3956,13 @@ function dismissProgrammeComplete(startNew){
 }
 
 // ── SHARE SESSION ───────────────────────────────────────────────────────────
-let _shareText = '';
+let _shareBlob = null;
+let _shareDayId = null;
 
 function shareSession(dayId){
+  _shareDayId = dayId;
+  _shareBlob  = null;
+
   const day = DAYS.find(d => d.id === dayId);
   if(!day) return;
   const today = getToday();
@@ -3860,70 +3970,292 @@ function shareSession(dayId){
   const typeColors = { push:'#ff4e3a', pull:'#3ab8ff', legs:'#ffe03a', rest:'#334155' };
   const typeCol = typeColors[day.type] || '#ff4e3a';
 
-  // Build exercise rows
-  let totalSets = 0;
-  const exRows = day.exercises.map((ex, i) => {
+  // Build exercise data
+  let totalSets = 0, topRM = 0, topRMEx = '';
+  const exData = day.exercises.map((ex, i) => {
     const sets = (sessionData[i] || []).filter(s => s && (s.wt || s.reps));
-    if(!sets.length) return '';
+    if(!sets.length) return null;
     totalSets += sets.length;
     const bestSet = sets.reduce((b, s) => ((s.wt||0) > (b.wt||0) ? s : b), sets[0]);
     const rm = bestSet.wt > 0 && bestSet.reps > 0 && bestSet.reps <= 15
       ? Math.round(bestSet.wt * (1 + bestSet.reps / 30)) : null;
-    const bestStr = bestSet.wt ? `${bestSet.wt}kg × ${bestSet.reps || '?'}` : `${bestSet.reps || '?'} reps`;
-    const rmStr = rm ? ` · ~${rm}kg 1RM` : '';
-    return `<div class="share-card-ex">
-      <div class="share-card-ex-name">${ex.name}</div>
-      <div class="share-card-ex-best">${bestStr}${rmStr}</div>
-    </div>`;
-  }).filter(Boolean).join('');
+    if(rm && rm > topRM){ topRM = rm; topRMEx = ex.name; }
+    return { name: ex.name, bestSet, rm, setCount: sets.length };
+  }).filter(Boolean);
 
   const [,mo,dy] = today.split('-');
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const dateLabel = `${MONTHS[+mo-1]} ${+dy} ${today.split('-')[0]}`;
   const typeLbl = (day.type||'push').toUpperCase();
 
+  const exRows = exData.map(ex => {
+    const bestStr = ex.bestSet.wt ? `${ex.bestSet.wt}kg × ${ex.bestSet.reps||'?'}` : `${ex.bestSet.reps||'?'} reps`;
+    return `<div class="share-card-ex">
+      <div class="share-card-ex-name">${ex.name}</div>
+      <div class="share-card-ex-best">${bestStr}${ex.rm?`<span class="share-card-ex-rm">~${ex.rm}kg 1RM</span>`:''}</div>
+    </div>`;
+  }).join('') || '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);letter-spacing:1px;padding:8px 0;text-align:center">NO SETS LOGGED YET</div>';
+
+  const topStatHtml = topRM > 0
+    ? `<span class="share-card-topstat">🏆 ${topRM}kg est. 1RM</span>` : '';
+
   const card = document.getElementById('shareCard');
   if(!card) return;
   card.innerHTML = `
+    <div class="share-card-topbar" style="background:linear-gradient(90deg,${typeCol},${typeCol}66)"></div>
     <div class="share-card-hdr">
-      <div class="share-card-badge" style="background:${typeCol}20;color:${typeCol};border:1px solid ${typeCol}40">${typeLbl}</div>
+      <div class="share-card-hdr-top">
+        <div class="share-card-badge" style="background:${typeCol}1a;color:${typeCol};border:1px solid ${typeCol}44">${typeLbl}</div>
+        <div class="share-card-logo">PLAN·PPL</div>
+      </div>
       <div class="share-card-name">${day.name}</div>
-      <div class="share-card-date">${dateLabel}</div>
+      <div class="share-card-subrow">
+        <div class="share-card-date">${dateLabel}</div>
+        ${topStatHtml}
+      </div>
     </div>
-    <div class="share-card-body">
-      ${exRows || '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);letter-spacing:1px;padding:8px 0">NO SETS LOGGED YET</div>'}
-    </div>
+    <div class="share-card-divider"></div>
+    <div class="share-card-body">${exRows}</div>
     <div class="share-card-footer">
-      <div class="share-card-total"><span>${totalSets}</span> sets logged</div>
-      <div class="share-card-brand">PLAN PPL</div>
+      <div>
+        <div class="share-card-footer-sets" style="color:${typeCol}">${totalSets}</div>
+        <div class="share-card-footer-lbl">Sets logged</div>
+      </div>
+      <div class="share-card-footer-brand">
+        <div class="share-card-footer-brandname">PLAN PPL</div>
+        <div class="share-card-footer-tagline">AI Training · planppl.app</div>
+      </div>
     </div>`;
 
-  // Native share text fallback
-  const lines = day.exercises.map((ex, i) => {
-    const sets = (sessionData[i] || []).filter(s => s && (s.wt || s.reps));
-    if(!sets.length) return null;
-    const best = sets.reduce((b,s)=>((s.wt||0)>(b.wt||0)?s:b), sets[0]);
-    return `${ex.name}: ${best.wt ? best.wt+'kg × '+best.reps : best.reps+' reps'}`;
-  }).filter(Boolean);
-  _shareText = `${day.name} · ${dateLabel}\n${lines.join('\n')}\n${totalSets} sets · Plan PPL`;
+  // Wire up buttons
+  const shareBtn = document.getElementById('shareNativeBtn');
+  const saveBtn  = document.getElementById('shareSaveBtn');
+  const hint     = document.getElementById('shareHint');
 
-  const nativeBtn = document.getElementById('shareNativeBtn');
-  if(nativeBtn){
-    if(navigator.share){ nativeBtn.classList.add('visible'); }
-    else { nativeBtn.classList.remove('visible'); }
-  }
+  const canShareFiles = !!(navigator.canShare);
+  if(shareBtn) shareBtn.classList.toggle('visible', !!navigator.share);
+  if(saveBtn)  saveBtn.classList.toggle('visible', !navigator.share); // show Save on desktop
+  if(hint) hint.textContent = navigator.share
+    ? 'Tap Share → Instagram to post to your story or feed'
+    : 'Save the image then post to Instagram';
 
   document.getElementById('shareOverlay').classList.add('show');
+
+  // Generate canvas image in background
+  buildShareImage(dayId, day, exData, totalSets, topRM, typeCol, dateLabel, typeLbl).then(blob => {
+    _shareBlob = blob;
+  });
+}
+
+// ── Canvas image builder (1080px wide, Instagram-ready) ─────────────────────
+async function buildShareImage(dayId, day, exData, totalSets, topRM, typeCol, dateLabel, typeLbl){
+  try{
+    await document.fonts.ready;
+    const DPR = 2; // retina
+    const W = 540, H_HDR = 170, H_ROW = 56, H_FTR = 80, H_PAD = 24;
+    const H = H_HDR + exData.length * H_ROW + H_FTR + H_PAD;
+    const PAD = 40;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * DPR;
+    canvas.height = H * DPR;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    // Background
+    ctx.fillStyle = '#080b0f';
+    ctx.fillRect(0, 0, W, H);
+
+    // Top colour bar
+    const barGrad = ctx.createLinearGradient(0,0,W,0);
+    barGrad.addColorStop(0, typeCol);
+    barGrad.addColorStop(1, typeCol + '44');
+    ctx.fillStyle = barGrad;
+    ctx.fillRect(0, 0, W, 5);
+
+    // Header subtle glow
+    const hGrad = ctx.createLinearGradient(0,0,0,H_HDR);
+    hGrad.addColorStop(0, typeCol + '18');
+    hGrad.addColorStop(1, 'rgba(8,11,15,0)');
+    ctx.fillStyle = hGrad;
+    ctx.fillRect(0, 5, W, H_HDR);
+
+    // Type badge
+    ctx.font = '500 11px "DM Mono", monospace';
+    const badgeTxt = typeLbl;
+    const bW = ctx.measureText(badgeTxt).width + 20;
+    ctx.fillStyle = typeCol + '22';
+    _canvasRoundRect(ctx, PAD, 22, bW, 22, 4);
+    ctx.fillStyle = typeCol;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badgeTxt, PAD + 10, 33);
+
+    // PLAN·PPL logo (top right)
+    ctx.fillStyle = '#e8f04a';
+    ctx.font = '400 13px "Bebas Neue", Impact, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('PLAN·PPL', W - PAD, 33);
+    ctx.textAlign = 'left';
+
+    // Day name
+    ctx.fillStyle = '#f0f4f8';
+    ctx.font = '400 58px "Bebas Neue", Impact, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText(day.name.toUpperCase(), PAD, 52);
+
+    // Date + top 1RM
+    ctx.fillStyle = '#4a6070';
+    ctx.font = '400 11px "DM Mono", monospace';
+    ctx.textBaseline = 'top';
+    ctx.fillText(dateLabel, PAD, 120);
+
+    if(topRM > 0){
+      ctx.fillStyle = '#4af0b8';
+      ctx.textAlign = 'right';
+      ctx.fillText(`🏆 ${topRM}kg est. 1RM`, W - PAD, 120);
+      ctx.textAlign = 'left';
+    }
+
+    // Divider
+    ctx.strokeStyle = '#1e2a38';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, H_HDR); ctx.lineTo(W - PAD, H_HDR);
+    ctx.stroke();
+
+    // Exercise rows
+    exData.forEach((ex, idx) => {
+      const rowY = H_HDR + idx * H_ROW;
+      const midY = rowY + H_ROW / 2;
+
+      ctx.fillStyle = '#f0f4f8';
+      ctx.font = '500 11px "DM Mono", monospace';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ex.name.toUpperCase(), PAD, midY - 6);
+
+      const bestStr = ex.bestSet.wt
+        ? `${ex.bestSet.wt}kg × ${ex.bestSet.reps||'?'}`
+        : `${ex.bestSet.reps||'?'} reps`;
+      ctx.fillStyle = '#4af0b8';
+      ctx.textAlign = 'right';
+      ctx.fillText(bestStr, W - PAD, midY - 6);
+      ctx.textAlign = 'left';
+
+      if(ex.rm){
+        ctx.fillStyle = '#4a6070';
+        ctx.font = '400 9px "DM Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(`~${ex.rm}kg 1RM`, W - PAD, midY + 9);
+        ctx.textAlign = 'left';
+      }
+
+      // Row divider
+      if(idx < exData.length - 1){
+        ctx.strokeStyle = '#1a2530';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(PAD, rowY + H_ROW); ctx.lineTo(W - PAD, rowY + H_ROW);
+        ctx.stroke();
+      }
+    });
+
+    // Footer bg
+    const ftY = H_HDR + exData.length * H_ROW + H_PAD;
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, ftY - H_PAD/2, W, H_FTR + H_PAD);
+    ctx.strokeStyle = '#1e2a38';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, ftY - H_PAD/2); ctx.lineTo(W, ftY - H_PAD/2);
+    ctx.stroke();
+
+    // Sets count
+    ctx.fillStyle = typeCol;
+    ctx.font = '400 38px "Bebas Neue", Impact, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText(String(totalSets), PAD, ftY);
+    ctx.fillStyle = '#4a6070';
+    ctx.font = '400 10px "DM Mono", monospace';
+    ctx.fillText('SETS LOGGED', PAD, ftY + 36);
+
+    // Brand
+    ctx.fillStyle = '#e8f04a';
+    ctx.font = '400 20px "Bebas Neue", Impact, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('PLAN PPL', W - PAD, ftY + 2);
+    ctx.fillStyle = '#2a3f52';
+    ctx.font = '400 9px "DM Mono", monospace';
+    ctx.fillText('AI TRAINING · PLANPPL.APP', W - PAD, ftY + 26);
+    ctx.textAlign = 'left';
+
+    return await new Promise(res => canvas.toBlob(res, 'image/png'));
+  }catch(e){
+    console.warn('buildShareImage failed:', e);
+    return null;
+  }
+}
+
+function _canvasRoundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath(); ctx.fill();
 }
 
 function closeShare(){
   document.getElementById('shareOverlay').classList.remove('show');
+  _shareBlob = null;
 }
 
 async function doNativeShare(){
   try{
-    await navigator.share({ title: 'Plan PPL Session', text: _shareText });
-  }catch(e){ /* user cancelled */ }
+    // Prefer sharing the image file so Instagram gets a proper image
+    if(_shareBlob){
+      const file = new File([_shareBlob], 'plan-ppl-session.png', { type:'image/png' });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title:'Plan PPL Session' });
+        return;
+      }
+    }
+    // Text fallback
+    const day = DAYS.find(d => d.id === _shareDayId);
+    await navigator.share({ title:'Plan PPL Session', text: day ? day.name + ' · Plan PPL' : 'Plan PPL Session' });
+  }catch(e){ /* cancelled */ }
+}
+
+async function saveShareImage(){
+  let blob = _shareBlob;
+  if(!blob){
+    showToast('Building image…');
+    // Build synchronously if not ready yet
+    const day = DAYS.find(d => d.id === _shareDayId);
+    if(!day) return;
+    const today = getToday();
+    const sessionData = appData.sessions[today]?.[_shareDayId] || {};
+    const typeColors = { push:'#ff4e3a', pull:'#3ab8ff', legs:'#ffe03a', rest:'#334155' };
+    const typeCol = typeColors[day.type] || '#ff4e3a';
+    let totalSets=0, topRM=0;
+    const exData = day.exercises.map((ex,i)=>{
+      const sets=(sessionData[i]||[]).filter(s=>s&&(s.wt||s.reps));
+      if(!sets.length) return null;
+      totalSets+=sets.length;
+      const best=sets.reduce((b,s)=>((s.wt||0)>(b.wt||0)?s:b),sets[0]);
+      const rm=best.wt>0&&best.reps>0&&best.reps<=15?Math.round(best.wt*(1+best.reps/30)):null;
+      if(rm&&rm>topRM) topRM=rm;
+      return {name:ex.name,bestSet:best,rm,setCount:sets.length};
+    }).filter(Boolean);
+    const [,mo,dy]=today.split('-');
+    const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    blob = await buildShareImage(_shareDayId,day,exData,totalSets,topRM,typeCol,`${MONTHS[+mo-1]} ${+dy} ${today.split('-')[0]}`,(day.type||'push').toUpperCase());
+  }
+  if(!blob){ showToast('⚠ Could not generate image'); return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'plan-ppl-session.png'; a.click();
+  URL.revokeObjectURL(url);
 }
 
 function handleSetInput(dayId, exIndex, setIndex, changedEl){
