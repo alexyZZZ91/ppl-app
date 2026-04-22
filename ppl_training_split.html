@@ -3127,7 +3127,7 @@ let _exGuideCache = null;
 function _getGuideCache(){ if(!_exGuideCache){ try{ _exGuideCache=JSON.parse(localStorage.getItem('_exGuideCache')||'{}'); }catch(e){ _exGuideCache={}; } } return _exGuideCache; }
 function _saveGuideCache(){ try{ localStorage.setItem('_exGuideCache', JSON.stringify(_exGuideCache)); }catch(e){} }
 
-const EXERCISE_GUIDE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/exercise-guide';
+const EXERCISE_GUIDE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/super-action';
 
 function syncActiveDayToToday(){
   // Use UTC day (consistent with getToday() which is also UTC)
