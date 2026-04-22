@@ -871,6 +871,8 @@ body{
   background:var(--panel2);border:1px solid var(--border);border-radius:7px;
   cursor:pointer;transition:color .15s,border-color .15s;
   user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;
+  touch-action:none;
 }
 .alt-item:hover{color:var(--white);border-color:var(--accent2);}
 .alt-item::before{
@@ -3143,28 +3145,41 @@ function selectAlt(dayId, exIndex, altName, event){
 let _altPressTimer = null;
 let _altPressEl    = null;
 let _altPressData  = null;
+let _altPressOrigin = null; // {x, y} of pointerdown, for movement threshold
 
 function altPressStart(dayId, exIndex, altName, event){
   event.stopPropagation();
-  _altPressData = { dayId, exIndex, altName };
-  _altPressEl   = event.currentTarget;
+  _altPressData   = { dayId, exIndex, altName };
+  _altPressEl     = event.currentTarget;
+  _altPressOrigin = { x: event.clientX, y: event.clientY };
+  _altPressEl.setPointerCapture(event.pointerId); // keep pointer events even if finger drifts
   _altPressEl.classList.add('holding');
   _altPressTimer = setTimeout(async () => {
-    _altPressTimer = null;
+    _altPressTimer  = null;
     const el   = _altPressEl;
     const data = _altPressData;
-    _altPressEl  = null;
-    _altPressData = null;
+    _altPressEl     = null;
+    _altPressData   = null;
+    _altPressOrigin = null;
     if(el) el.classList.remove('holding');
     await saveAltToPlan(data.dayId, data.exIndex, data.altName);
   }, 600);
+}
+
+function altPressMove(event){
+  if(!_altPressTimer || !_altPressOrigin) return;
+  const dx = event.clientX - _altPressOrigin.x;
+  const dy = event.clientY - _altPressOrigin.y;
+  // Cancel if finger drifts more than 12px — intentional scroll, not a hold
+  if(Math.sqrt(dx*dx + dy*dy) > 12) altPressCancel(event);
 }
 
 function altPressEnd(event){
   event.stopPropagation();
   if(!_altPressTimer) return; // timer already fired — save happened
   clearTimeout(_altPressTimer);
-  _altPressTimer = null;
+  _altPressTimer  = null;
+  _altPressOrigin = null;
   if(_altPressEl){ _altPressEl.classList.remove('holding'); }
   const data = _altPressData;
   _altPressEl   = null;
@@ -3175,7 +3190,8 @@ function altPressEnd(event){
 function altPressCancel(event){
   if(_altPressTimer){ clearTimeout(_altPressTimer); _altPressTimer = null; }
   if(_altPressEl){ _altPressEl.classList.remove('holding'); _altPressEl = null; }
-  _altPressData = null;
+  _altPressData   = null;
+  _altPressOrigin = null;
 }
 
 async function saveAltToPlan(dayId, exIndex, altName){
@@ -3185,6 +3201,7 @@ async function saveAltToPlan(dayId, exIndex, altName){
   try{
     const planToSave = DAYS.map(d=>({
       label:     d.label,
+      name:      d.name || d.label,
       tag:       d.tag,
       type:      d.type,
       color:     d.color,
@@ -4319,7 +4336,7 @@ function renderDay(){
       ? `<button id="altsbtn-${key}" class="alts-btn" onclick="toggleAlts('${key}',event)">⇄ SWAP</button>`
       : '';
     const altsPanel = (e.alts&&e.alts.length)
-      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Machine busy? Choose an alternative</div><div class="alts-hint">Tap — swap today &nbsp;·&nbsp; Hold — save to plan</div>${e.alts.map(a=>`<div class="alt-item" onpointerdown="altPressStart(${d.id},${i},'${a.replace(/'/g,"&#39;")}',event)" onpointerup="altPressEnd(event)" onpointercancel="altPressCancel(event)" onpointerleave="altPressCancel(event)" oncontextmenu="event.preventDefault()">${a}</div>`).join('')}</div>`
+      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Machine busy? Choose an alternative</div><div class="alts-hint">Tap — swap today &nbsp;·&nbsp; Hold — save to plan</div>${e.alts.map(a=>`<div class="alt-item" onpointerdown="altPressStart(${d.id},${i},'${a.replace(/'/g,"&#39;")}',event)" onpointermove="altPressMove(event)" onpointerup="altPressEnd(event)" onpointercancel="altPressCancel(event)" oncontextmenu="event.preventDefault()">${a}</div>`).join('')}</div>`
       : '';
     return `
     <div class="ex-card ${done?'done':''}" style="--day-col:${d.col}">
