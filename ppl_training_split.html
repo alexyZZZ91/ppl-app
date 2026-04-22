@@ -1786,6 +1786,150 @@ body{
 }
 .ptl-refresh-btn:hover{ opacity:.85; }
 
+/* ── EXERCISE GUIDE BUTTON ── */
+.ex-guide-btn{
+  background:transparent;border:none;padding:0;
+  margin-left:6px;
+  font-size:13px;cursor:pointer;
+  color:var(--muted2);
+  vertical-align:middle;
+  line-height:1;
+  transition:color .15s;
+  flex-shrink:0;
+}
+.ex-guide-btn:hover,.ex-guide-btn:active{ color:var(--accent2); }
+
+/* ── EXERCISE GUIDE SHEET ── */
+#exGuideOverlay{
+  display:none;
+  position:fixed;inset:0;z-index:700;
+  background:rgba(8,11,15,.6);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  align-items:flex-end;
+  justify-content:center;
+}
+#exGuideOverlay.show{ display:flex; }
+.ex-guide-sheet{
+  background:var(--panel);
+  border:1px solid var(--border2);
+  border-bottom:none;
+  border-radius:20px 20px 0 0;
+  width:100%;max-width:720px;
+  max-height:82vh;
+  overflow-y:auto;
+  padding-bottom:env(safe-area-inset-bottom);
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.32,0,.67,0);
+}
+#exGuideOverlay.show .ex-guide-sheet{
+  transform:translateY(0);
+  transition:transform .32s cubic-bezier(.33,1,.68,1);
+}
+.ex-guide-handle{
+  width:36px;height:4px;border-radius:2px;
+  background:var(--border2);
+  margin:12px auto 0;
+}
+.ex-guide-hdr{
+  padding:16px 20px 14px;
+  border-bottom:1px solid var(--border);
+}
+.ex-guide-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:26px;letter-spacing:2px;
+  color:var(--white);line-height:1;
+  margin-bottom:6px;
+}
+.ex-guide-muscles{
+  display:flex;flex-wrap:wrap;gap:5px;
+}
+.ex-guide-muscle-pill{
+  font-family:'DM Mono',monospace;
+  font-size:8px;letter-spacing:1px;
+  text-transform:uppercase;
+  padding:3px 9px;border-radius:10px;
+  background:rgba(74,240,184,.08);
+  border:1px solid rgba(74,240,184,.2);
+  color:var(--accent2);
+}
+.ex-guide-body{ padding:16px 20px 20px; }
+.ex-guide-section{ margin-bottom:20px; }
+.ex-guide-section:last-child{ margin-bottom:0; }
+.ex-guide-section-title{
+  font-family:'DM Mono',monospace;
+  font-size:8px;letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--muted2);
+  margin-bottom:10px;
+}
+.ex-guide-list{
+  list-style:none;
+  display:flex;flex-direction:column;gap:8px;
+}
+.ex-guide-list li{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:13px;color:var(--white);
+  line-height:1.45;font-weight:300;
+}
+.ex-guide-list li::before{
+  content:'';
+  flex-shrink:0;width:6px;height:6px;
+  border-radius:50%;
+  margin-top:5px;
+}
+.ex-guide-cues li::before{ background:var(--accent2); }
+.ex-guide-mistakes li::before{ background:#ff7a6a; }
+.ex-guide-yt{
+  display:flex;
+  align-items:center;justify-content:center;
+  gap:8px;
+  width:100%;
+  margin-top:20px;
+  padding:13px;
+  background:rgba(255,0,0,.08);
+  border:1px solid rgba(255,0,0,.2);
+  border-radius:10px;
+  color:#ff6060;
+  font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:1px;
+  text-decoration:none;
+  text-transform:uppercase;
+  transition:background .2s;
+}
+.ex-guide-yt:hover,.ex-guide-yt:active{ background:rgba(255,0,0,.14); }
+.ex-guide-loading{
+  padding:40px 20px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:14px;
+}
+.ex-guide-spinner{
+  width:28px;height:28px;
+  border:2px solid var(--border2);
+  border-top-color:var(--accent2);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+.ex-guide-loading-text{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:2px;
+  color:var(--muted2);text-transform:uppercase;
+}
+.ex-guide-close{
+  display:block;width:calc(100% - 40px);
+  margin:0 20px 4px;
+  padding:12px;
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--muted);
+  font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:1px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.ex-guide-close:hover{ color:var(--white);border-color:var(--border2); }
+
 /* ── RESET ── */
 .reset-area{padding:0 16px 8px;}
 
@@ -1962,6 +2106,15 @@ body{
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- Exercise guide bottom sheet -->
+<div id="exGuideOverlay" onclick="closeExerciseGuide(event)">
+  <div class="ex-guide-sheet" id="exGuideSheet">
+    <div class="ex-guide-handle"></div>
+    <div id="exGuideContent"></div>
+    <button class="ex-guide-close" onclick="closeExerciseGuide()">✕ Close</button>
+  </div>
+</div>
 
 <!-- Programme completion overlay -->
 <div id="progCompleteOverlay"></div>
@@ -2140,6 +2293,7 @@ async function _finishSignIn(user, profile){
   try{
     if(profile?.program_weeks)      _programWeeks     = profile.program_weeks;
     if(profile?.program_start_date) _programStartDate = profile.program_start_date;
+    if(profile?.experience)         _userExperience   = profile.experience;
     await loadDataFromCloud();
     syncActiveDayToToday(); // runs after data load so last-completed session is available
     try{
@@ -2966,6 +3120,14 @@ const FALLBACK_STRETCHES = {
 let DAYS = DEFAULT_DAYS;
 let _programWeeks = 8;
 let _programStartDate = null; // 'YYYY-MM-DD'
+let _userExperience = 'Intermediate'; // set from profile on sign-in
+
+// Exercise guide cache — persisted to localStorage so each exercise is only fetched once
+let _exGuideCache = null;
+function _getGuideCache(){ if(!_exGuideCache){ try{ _exGuideCache=JSON.parse(localStorage.getItem('_exGuideCache')||'{}'); }catch(e){ _exGuideCache={}; } } return _exGuideCache; }
+function _saveGuideCache(){ try{ localStorage.setItem('_exGuideCache', JSON.stringify(_exGuideCache)); }catch(e){} }
+
+const EXERCISE_GUIDE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/exercise-guide';
 
 function syncActiveDayToToday(){
   // Use UTC day (consistent with getToday() which is also UTC)
@@ -3933,6 +4095,110 @@ function shareSession(dayId){
   document.getElementById('shareOverlay').classList.add('show');
 }
 
+// ── EXERCISE GUIDE ─────────────────────────────────────────────────────────
+function showExerciseGuide(exName){
+  const overlay = document.getElementById('exGuideOverlay');
+  const content = document.getElementById('exGuideContent');
+  if(!overlay || !content) return;
+
+  // Show loading state immediately
+  content.innerHTML = `
+    <div class="ex-guide-loading">
+      <div class="ex-guide-spinner"></div>
+      <div class="ex-guide-loading-text">Loading guide…</div>
+    </div>`;
+  overlay.classList.add('show');
+
+  // Check cache first, otherwise fetch
+  const cache = _getGuideCache();
+  if(cache[exName]){
+    _renderGuide(exName, cache[exName]);
+  } else {
+    fetchExerciseGuide(exName).then(guide => {
+      _renderGuide(exName, guide);
+    }).catch(err => {
+      content.innerHTML = `
+        <div class="ex-guide-hdr">
+          <div class="ex-guide-name">${exName}</div>
+        </div>
+        <div class="ex-guide-body">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted);text-align:center;padding:20px 0">
+            Could not load guide — check your connection and try again.
+          </div>
+          <a class="ex-guide-yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(exName+' exercise tutorial')}" target="_blank" rel="noopener">
+            ▶ Watch on YouTube
+          </a>
+        </div>`;
+    });
+  }
+}
+
+function _renderGuide(exName, guide){
+  const content = document.getElementById('exGuideContent');
+  if(!content) return;
+
+  const muscles = (guide.muscles || []).map(m =>
+    `<span class="ex-guide-muscle-pill">${m}</span>`
+  ).join('');
+
+  const cues = (guide.cues || []).map(c =>
+    `<li>${c}</li>`
+  ).join('');
+
+  const mistakes = (guide.mistakes || []).map(m =>
+    `<li>${m}</li>`
+  ).join('');
+
+  const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(exName + ' exercise tutorial form')}`;
+
+  content.innerHTML = `
+    <div class="ex-guide-hdr">
+      <div class="ex-guide-name">${exName}</div>
+      ${muscles ? `<div class="ex-guide-muscles">${muscles}</div>` : ''}
+    </div>
+    <div class="ex-guide-body">
+      ${cues ? `
+      <div class="ex-guide-section">
+        <div class="ex-guide-section-title">✓ Form Cues</div>
+        <ul class="ex-guide-list ex-guide-cues">${cues}</ul>
+      </div>` : ''}
+      ${mistakes ? `
+      <div class="ex-guide-section">
+        <div class="ex-guide-section-title">⚠ Common Mistakes</div>
+        <ul class="ex-guide-list ex-guide-mistakes">${mistakes}</ul>
+      </div>` : ''}
+      <a class="ex-guide-yt" href="${ytUrl}" target="_blank" rel="noopener">
+        ▶ Watch Tutorial on YouTube
+      </a>
+    </div>`;
+}
+
+async function fetchExerciseGuide(exName){
+  const { data:{ session } } = await _sb.auth.getSession();
+  const res = await fetch(EXERCISE_GUIDE_FN, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + session.access_token,
+    },
+    body: JSON.stringify({ exerciseName: exName, experience: _userExperience }),
+  });
+  const json = await res.json();
+  if(!res.ok || json.error) throw new Error(json.error || `HTTP ${res.status}`);
+
+  // Cache the result
+  const cache = _getGuideCache();
+  cache[exName] = json.guide;
+  _saveGuideCache();
+  return json.guide;
+}
+
+function closeExerciseGuide(e){
+  // Close if tapping the backdrop (not the sheet itself)
+  if(e && e.target !== document.getElementById('exGuideOverlay')) return;
+  document.getElementById('exGuideOverlay').classList.remove('show');
+}
+
 function closeShare(){
   document.getElementById('shareOverlay').classList.remove('show');
 }
@@ -4011,7 +4277,10 @@ function renderDay(){
       <div class="ex-card-top" onclick="${locked?'':` toggle('${key}')`}" style="cursor:${locked?'default':'pointer'};">
         <div class="ex-stripe"></div>
         <div class="ex-body">
-          <div class="ex-name">${e.name}</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div class="ex-name">${e.name}</div>
+            <button class="ex-guide-btn" onclick="showExerciseGuide('${e.name.replace(/'/g,"\\'")}');event.stopPropagation()" title="How to do this exercise">ⓘ</button>
+          </div>
           <div class="ex-detail">${e.note}</div>
           <div class="ex-pills">
             <span class="pill sets">${e.sets} SETS</span>
