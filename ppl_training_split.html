@@ -1872,14 +1872,15 @@ body{
 .ex-guide-btn{
   background:transparent;border:none;padding:0;
   margin-left:6px;
-  font-size:13px;cursor:pointer;
-  color:var(--muted2);
+  font-size:15px;cursor:pointer;
+  color:var(--accent2);
+  opacity:.55;
   vertical-align:middle;
   line-height:1;
-  transition:color .15s;
+  transition:color .15s, opacity .15s;
   flex-shrink:0;
 }
-.ex-guide-btn:hover,.ex-guide-btn:active{ color:var(--accent2); }
+.ex-guide-btn:hover,.ex-guide-btn:active{ opacity:1; }
 
 /* ── EXERCISE GUIDE SHEET ── */
 #exGuideOverlay{
