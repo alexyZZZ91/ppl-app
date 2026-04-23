@@ -17,11 +17,11 @@ jobs:
           version: latest
 
       - name: Deploy exercise-guide
-        run: supabase functions deploy exercise-guide --project-ref ukylutrjetyrabqlntsc
+        run: supabase functions deploy exercise-guide --project-ref ukylutrjetyrabqlntsc --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Deploy hyper-responder
-        run: supabase functions deploy hyper-responder --project-ref ukylutrjetyrabqlntsc
+        run: supabase functions deploy hyper-responder --project-ref ukylutrjetyrabqlntsc --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
