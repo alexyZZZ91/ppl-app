@@ -3241,7 +3241,7 @@ let _userExperience = 'Intermediate'; // set from profile on sign-in
 // Exercise guide cache — persisted to localStorage so each exercise is only fetched once
 // v2: entries are { guide, gifUrl } — bump key to invalidate old format
 let _exGuideCache = null;
-const _EX_GUIDE_CACHE_KEY = '_exGuideCache2';
+const _EX_GUIDE_CACHE_KEY = '_exGuideCache3';
 function _getGuideCache(){ if(!_exGuideCache){ try{ _exGuideCache=JSON.parse(localStorage.getItem(_EX_GUIDE_CACHE_KEY)||'{}'); }catch(e){ _exGuideCache={}; } } return _exGuideCache; }
 function _saveGuideCache(){ try{ localStorage.setItem(_EX_GUIDE_CACHE_KEY, JSON.stringify(_exGuideCache)); }catch(e){} }
 
@@ -4483,6 +4483,8 @@ async function fetchExerciseGuide(exName){
   });
   const json = await res.json();
   if(!res.ok || json.error) throw new Error(json.error || `HTTP ${res.status}`);
+
+  console.log('[exercise-guide] gifUrl:', json.gifUrl ?? 'null — no match found in ExerciseDB');
 
   // Cache the result
   const cache = _getGuideCache();
