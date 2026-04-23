@@ -1936,6 +1936,15 @@ body{
   border:1px solid rgba(74,240,184,.2);
   color:var(--accent2);
 }
+.ex-guide-gif{
+  width:100%;
+  max-height:220px;
+  object-fit:contain;
+  border-radius:10px;
+  background:#0d1117;
+  display:block;
+  margin-bottom:14px;
+}
 .ex-guide-body{ padding:16px 20px 20px; }
 .ex-guide-section{ margin-bottom:20px; }
 .ex-guide-section:last-child{ margin-bottom:0; }
@@ -3230,9 +3239,11 @@ let _programStartDate = null; // 'YYYY-MM-DD'
 let _userExperience = 'Intermediate'; // set from profile on sign-in
 
 // Exercise guide cache — persisted to localStorage so each exercise is only fetched once
+// v2: entries are { guide, gifUrl } — bump key to invalidate old format
 let _exGuideCache = null;
-function _getGuideCache(){ if(!_exGuideCache){ try{ _exGuideCache=JSON.parse(localStorage.getItem('_exGuideCache')||'{}'); }catch(e){ _exGuideCache={}; } } return _exGuideCache; }
-function _saveGuideCache(){ try{ localStorage.setItem('_exGuideCache', JSON.stringify(_exGuideCache)); }catch(e){} }
+const _EX_GUIDE_CACHE_KEY = '_exGuideCache2';
+function _getGuideCache(){ if(!_exGuideCache){ try{ _exGuideCache=JSON.parse(localStorage.getItem(_EX_GUIDE_CACHE_KEY)||'{}'); }catch(e){ _exGuideCache={}; } } return _exGuideCache; }
+function _saveGuideCache(){ try{ localStorage.setItem(_EX_GUIDE_CACHE_KEY, JSON.stringify(_exGuideCache)); }catch(e){} }
 
 const EXERCISE_GUIDE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/exercise-guide';
 
@@ -4402,10 +4413,10 @@ function showExerciseGuide(exName){
   // Check cache first, otherwise fetch
   const cache = _getGuideCache();
   if(cache[exName]){
-    _renderGuide(exName, cache[exName]);
+    _renderGuide(exName, cache[exName].guide, cache[exName].gifUrl);
   } else {
-    fetchExerciseGuide(exName).then(guide => {
-      _renderGuide(exName, guide);
+    fetchExerciseGuide(exName).then(({ guide, gifUrl }) => {
+      _renderGuide(exName, guide, gifUrl);
     }).catch(err => {
       console.error('exercise-guide fetch failed:', err);
       content.innerHTML = `
@@ -4427,7 +4438,7 @@ function showExerciseGuide(exName){
   }
 }
 
-function _renderGuide(exName, guide){
+function _renderGuide(exName, guide, gifUrl){
   const content = document.getElementById('exGuideContent');
   if(!content) return;
 
@@ -4439,10 +4450,6 @@ function _renderGuide(exName, guide){
     `<li>${c}</li>`
   ).join('');
 
-  const mistakes = (guide.mistakes || []).map(m =>
-    `<li>${m}</li>`
-  ).join('');
-
   const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(exName + ' exercise tutorial form')}`;
 
   content.innerHTML = `
@@ -4451,15 +4458,11 @@ function _renderGuide(exName, guide){
       ${muscles ? `<div class="ex-guide-muscles">${muscles}</div>` : ''}
     </div>
     <div class="ex-guide-body">
+      ${gifUrl ? `<img class="ex-guide-gif" src="${gifUrl}" alt="${exName} demonstration" loading="lazy">` : ''}
       ${cues ? `
       <div class="ex-guide-section">
         <div class="ex-guide-section-title">✓ Form Cues</div>
         <ul class="ex-guide-list ex-guide-cues">${cues}</ul>
-      </div>` : ''}
-      ${mistakes ? `
-      <div class="ex-guide-section">
-        <div class="ex-guide-section-title">⚠ Common Mistakes</div>
-        <ul class="ex-guide-list ex-guide-mistakes">${mistakes}</ul>
       </div>` : ''}
       <a class="ex-guide-yt" href="${ytUrl}" target="_blank" rel="noopener">
         ▶ Watch Tutorial on YouTube
@@ -4483,9 +4486,9 @@ async function fetchExerciseGuide(exName){
 
   // Cache the result
   const cache = _getGuideCache();
-  cache[exName] = json.guide;
+  cache[exName] = { guide: json.guide, gifUrl: json.gifUrl ?? null };
   _saveGuideCache();
-  return json.guide;
+  return { guide: json.guide, gifUrl: json.gifUrl ?? null };
 }
 
 function closeExerciseGuide(e){
