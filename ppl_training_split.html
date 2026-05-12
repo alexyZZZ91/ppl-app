@@ -3248,41 +3248,22 @@ function _saveGuideCache(){ try{ localStorage.setItem(_EX_GUIDE_CACHE_KEY, JSON.
 const EXERCISE_GUIDE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/exercise-guide';
 
 function syncActiveDayToToday(){
-  // Use UTC day (consistent with getToday() which is also UTC)
+  // Use UTC day-of-week (consistent with getToday() which is also UTC)
   const _utcDow = new Date(getToday()+'T12:00:00Z').getUTCDay();
-  // Sunday → rest day
+  // Sunday → rest
   if(_utcDow===0){ activeView='rest'; activeDay=DAYS[0].id; return; }
   // Primary: label-based matching (default plan has MON/TUE/WED labels)
   const lbl=['SUN','MON','TUE','WED','THU','FRI','SAT'][_utcDow];
-  const i = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
-  if(i>=0){ activeView='day'; activeDay = DAYS[i].id; return; }
-  // Fallback: last completed session → same day if today, next day if prior (AI plans)
-  // Only look at sessions from the current program start onwards — older sessions
-  // belong to a previous plan and have unreliable day indices
-  const today = getToday();
-  const dates = Object.keys(appData.sessions||{}).sort();
-  for(let di=dates.length-1; di>=0; di--){
-    if(_programStartDate && dates[di] < _programStartDate) break;
-    const sess = appData.sessions[dates[di]];
-    const completedIds = Object.keys(sess).filter(k=>sess[k]?._completed);
-    if(completedIds.length){
-      const lastId = +completedIds[completedIds.length-1];
-      const lastIdx = DAYS.findIndex(d=>d.id===lastId);
-      if(lastIdx>=0){
-        // If completed today, stay on that day (show it locked/done)
-        // If completed on a previous day, advance to the next
-        const advance = dates[di] !== today;
-        activeDay = DAYS[advance ? (lastIdx+1)%DAYS.length : lastIdx].id;
-        return;
-      }
-    }
-  }
-  // Last resort: rotation from program start date
-  if(_programStartDate){
-    const start = new Date(_programStartDate+'T00:00:00');
-    const now   = new Date(getToday()+'T00:00:00');
-    const diff  = Math.round((now-start)/86400000);
-    if(diff>=0){ activeDay = DAYS[diff % DAYS.length].id; return; }
+  const byLabel = DAYS.findIndex(d=>(d.label||'').toUpperCase()===lbl);
+  if(byLabel>=0){ activeView='day'; activeDay=DAYS[byLabel].id; return; }
+  // Fallback: direct day-of-week → plan index (AI plans: Mon=0, Tue=1, … Sat=5)
+  // This keeps the shown day anchored to the calendar so data always lands on the right dayId.
+  const idx = _utcDow - 1; // Mon(1)→0, Tue(2)→1, Wed(3)→2, Thu(4)→3, Fri(5)→4, Sat(6)→5
+  if(idx >= 0 && idx < DAYS.length){
+    const day = DAYS[idx];
+    activeView = (day.type==='rest') ? 'rest' : 'day';
+    activeDay  = day.id;
+    return;
   }
   activeDay = DAYS[0].id;
 }
