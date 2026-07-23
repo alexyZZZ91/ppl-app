@@ -2312,6 +2312,7 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let _currentUser = null;
 let _username = null;
 let _friendData = { friends:[], incoming:[], outgoing:[] };
+let _sharedInbox = []; // pending programs shared with me (Phase 3)
 
 /* ── DATA HELPERS ── */
 function getToday(){ return new Date().toISOString().slice(0,10); }
@@ -2413,6 +2414,7 @@ async function _finishSignIn(user, profile){
     const name = user.user_metadata?.full_name || user.email || 'User';
     const handle = _username ? `<span style="color:var(--accent);font-weight:700;margin-right:6px;">@${_username}</span>` : '';
     el.innerHTML = handle + name +
+      `<button class="auth-signout" onclick="openShareModal()">share plan</button>` +
       `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
       `<button class="auth-signout" onclick="clearHistory()">clear history</button>` +
       `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
@@ -2424,8 +2426,8 @@ async function _finishSignIn(user, profile){
     }
     hideAuthOverlay();
     setupNotifications();
-    // Load friend data in the background so the request badge shows on the tab.
-    loadFriendData().then(()=>{ if(_currentUser) renderTabs(); });
+    // Load friend + shared-program data in the background so the tab badge shows.
+    Promise.all([loadFriendData(), loadSharedPrograms()]).then(()=>{ if(_currentUser) renderTabs(); });
     // Keep my leaderboard streak current on each sign-in.
     syncUserStats();
     // Show programme completion overlay if the block has ended
@@ -2672,6 +2674,7 @@ function onSignedOut(){
   _currentUser = null;
   _username = null;
   _friendData = { friends:[], incoming:[], outgoing:[] };
+  _sharedInbox = [];
   _isPublic = false;
   _boardMode = 'friends';
   appData = { checked:{}, sessions:{} };
@@ -4009,7 +4012,7 @@ function renderTabs(){
       <span class="d-dot"></span>
       <span class="done-pip" style="display:none"></span>
     </button>`;
-  const nReq = (_friendData.incoming||[]).length;
+  const nReq = (_friendData.incoming||[]).length + (_sharedInbox||[]).length;
   const friendsBtn = `<button class="day-btn hist ${activeView==='friends'?'active':''}" onclick="switchFriends()">
       <span class="d-num" style="font-size:16px;padding-top:3px;">👥</span>
       <span class="d-type">friends</span>
@@ -4058,7 +4061,7 @@ async function switchFriends(){
   _showView('friendsContent');
   renderTabs();
   document.getElementById('friendsContent').innerHTML = '<div class="fr-wrap"><div class="fr-searching">Loading…</div></div>';
-  await loadFriendData();
+  await Promise.all([loadFriendData(), loadSharedPrograms()]);
   if(activeView!=='friends') return; // navigated away while loading
   renderTabs(); // refresh request badge
   renderFriends();
@@ -4137,6 +4140,88 @@ async function removeFriendship(rowId){
   await loadFriendData(); renderTabs(); renderFriends();
 }
 
+/* ── SHARE A PROGRAM (Phase 3) ── */
+async function loadSharedPrograms(){
+  _sharedInbox = [];
+  if(!_currentUser) return;
+  const { data, error } = await _sb.from('shared_programs')
+    .select('id,owner_id,owner_username,name,plan,created_at')
+    .eq('recipient_id', _currentUser.id).eq('status', 'pending')
+    .order('created_at', { ascending:false });
+  if(error){ console.error('loadSharedPrograms:', error); return; }
+  _sharedInbox = data || [];
+}
+
+function openShareModal(){
+  const ov = document.getElementById('shareProgOverlay');
+  const friends = _friendData.friends;
+  const list = friends.length
+    ? friends.map(f=>`<div class="fr-row">
+        <div class="fr-avatar">${(f.username||'?').slice(0,1).toUpperCase()}</div>
+        <div class="fr-name">@${f.username}</div>
+        <div class="fr-actions"><button class="fr-btn add" id="share-${f.otherId}" onclick="shareProgramTo('${f.otherId}')">Send</button></div>
+      </div>`).join('')
+    : `<div class="fr-empty">Add friends first — then you can share your program with them.</div>`;
+  ov.innerHTML = `<div class="ov-card">
+      <div class="ov-title">Share your program</div>
+      <div class="ov-sub">Send your current plan to a friend so you can train it together and compete on the board.</div>
+      <div class="share-list">${list}</div>
+      <button class="fr-btn ghost ov-close" onclick="closeShareModal()">Close</button>
+    </div>`;
+  ov.style.display = 'flex';
+}
+function closeShareModal(){ document.getElementById('shareProgOverlay').style.display='none'; }
+
+async function shareProgramTo(friendId){
+  const btn = document.getElementById('share-'+friendId);
+  if(btn){ btn.disabled = true; btn.textContent = '…'; }
+  const { error } = await _sb.from('shared_programs').insert({
+    owner_id:     _currentUser.id,
+    owner_username: _username,
+    recipient_id: friendId,
+    name:         `@${_username}'s program`,
+    plan:         DAYS,
+    status:       'pending',
+  });
+  if(error){
+    console.error('shareProgramTo:', error);
+    if(btn){ btn.disabled=false; btn.textContent='Send'; }
+    alert('Could not share the program — please try again.');
+    return;
+  }
+  if(btn){ btn.textContent = 'Sent ✓'; btn.classList.remove('add'); btn.classList.add('ghost'); }
+}
+
+async function adoptSharedProgram(shareId){
+  const share = _sharedInbox.find(s=>s.id===shareId);
+  if(!share) return;
+  if(!confirm(`Adopt @${share.owner_username}'s program? This replaces your current plan. Your history and streak are kept.`)) return;
+  const plan = share.plan;
+  const today = getToday();
+  const trainingDays = (plan||[]).filter(d=>(d.type||'').toLowerCase()!=='rest').length || _weeklyGoal;
+  const { error } = await _sb.from('user_profiles')
+    .update({ plan, program_start_date:today, days_per_week:trainingDays })
+    .eq('user_id', _currentUser.id);
+  if(error){ console.error('adoptSharedProgram:', error); alert('Could not adopt the program.'); return; }
+  await _sb.from('shared_programs').update({ status:'adopted' }).eq('id', shareId);
+  DAYS = normalizePlan(plan);
+  _weeklyGoal = trainingDays;
+  _programStartDate = today;
+  await loadSharedPrograms();
+  syncUserStats();
+  // Drop the user onto the new plan's day view.
+  syncActiveDayToToday();
+  if(activeView==='rest') switchRest(); else switchDay(activeDay);
+  alert(`Adopted @${share.owner_username}'s program — let's grow together! 💪`);
+}
+
+async function dismissSharedProgram(shareId){
+  const { error } = await _sb.from('shared_programs').update({ status:'dismissed' }).eq('id', shareId);
+  if(error){ console.error('dismissSharedProgram:', error); return; }
+  await loadSharedPrograms();
+  renderTabs(); renderFriends();
+}
+
 /* ── FRIENDS UI ── */
 function _frRow(username, actionsHTML){
   const initial = (username||'?').slice(0,1).toUpperCase();
@@ -4157,6 +4242,14 @@ function renderFriends(){
   const out = outgoing.map(x=>_frRow(x.username,
     `<span class="fr-pending">Pending</span>
      <button class="fr-btn ghost" onclick="removeFriendship('${x.rowId}')">Cancel</button>`)).join('');
+  const shared = _sharedInbox.map(s=>`<div class="fr-row">
+      <div class="fr-avatar">📋</div>
+      <div class="fr-name">${s.name||'Shared program'}<div class="fr-sub">from @${s.owner_username||'a friend'}</div></div>
+      <div class="fr-actions">
+        <button class="fr-btn accept" onclick="adoptSharedProgram('${s.id}')">Adopt</button>
+        <button class="fr-btn ghost" onclick="dismissSharedProgram('${s.id}')">Dismiss</button>
+      </div>
+    </div>`).join('');
 
   document.getElementById('friendsContent').innerHTML = `
     <div class="fr-wrap">
@@ -4166,6 +4259,7 @@ function renderFriends(){
                oninput="_onFriendSearch(this)">
         <div id="frResults" class="fr-results"></div>
       </div>
+      ${_sharedInbox.length ? `<div class="fr-section-title">Shared with you · ${_sharedInbox.length}</div>${shared}` : ''}
       ${incoming.length ? `<div class="fr-section-title">Requests · ${incoming.length}</div>${inc}` : ''}
       <div class="fr-section-title">Friends · ${friends.length}</div>
       ${friends.length ? fri : `<div class="fr-empty">No friends yet — search a @username above to connect.</div>`}
@@ -5275,6 +5369,23 @@ if ('serviceWorker' in navigator) {
 .lb-optin{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;
   margin-top:20px;padding:0 2px;cursor:pointer;}
 .lb-optin input{width:16px;height:16px;accent-color:var(--accent);}
+
+/* ── SHARE PROGRAM ── */
+.fr-sub{color:var(--muted);font-size:12px;font-weight:500;margin-top:2px;}
+#shareProgOverlay{position:fixed;inset:0;z-index:1100;display:none;
+  background:rgba(0,0,0,.6);align-items:flex-end;justify-content:center;
+  padding:0;}
+.ov-card{width:100%;max-width:600px;max-height:85vh;overflow-y:auto;
+  background:var(--bg);border:1px solid var(--border2);
+  border-radius:18px 18px 0 0;padding:24px 18px calc(28px + env(safe-area-inset-bottom));}
+.ov-title{color:var(--white);font-size:20px;font-weight:800;margin-bottom:6px;}
+.ov-sub{color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:18px;}
+.share-list{display:flex;flex-direction:column;gap:8px;}
+.ov-close{width:100%;margin-top:16px;padding:12px;}
+@media(min-width:600px){
+  #shareProgOverlay{align-items:center;}
+  .ov-card{border-radius:18px;}
+}
 </style>
 <script>
 (function(){
@@ -5282,6 +5393,14 @@ if ('serviceWorker' in navigator) {
   (function(){
     const el = document.createElement('div');
     el.id = 'usernameOverlay';
+    document.body.appendChild(el);
+  })();
+
+  // ── SHARE-PROGRAM OVERLAY ──
+  (function(){
+    const el = document.createElement('div');
+    el.id = 'shareProgOverlay';
+    el.onclick = (e)=>{ if(e.target===el) closeShareModal(); };
     document.body.appendChild(el);
   })();
 
