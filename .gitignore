@@ -10,3 +10,15 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# Node / Playwright
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+.last-run.json
+
+# Local env / secrets
+.env
