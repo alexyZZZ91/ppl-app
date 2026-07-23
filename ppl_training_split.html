@@ -2304,6 +2304,7 @@ const SUPABASE_URL = 'https://ukylutrjetyrabqlntsc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVreWx1dHJqZXR5cmFicWxudHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Mjk1MzAsImV4cCI6MjA4OTMwNTUzMH0.CCbZ0gJw07n0aAmU9Od1BJEwluz81aA4hDhzdAcJGfY';
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let _currentUser = null;
+let _username = null;
 
 /* ── DATA HELPERS ── */
 function getToday(){ return new Date().toISOString().slice(0,10); }
@@ -2401,7 +2402,8 @@ async function _finishSignIn(user, profile){
     }
     const el = document.getElementById('hdrUser');
     const name = user.user_metadata?.full_name || user.email || 'User';
-    el.innerHTML = name +
+    const handle = _username ? `<span style="color:var(--accent);font-weight:700;margin-right:6px;">@${_username}</span>` : '';
+    el.innerHTML = handle + name +
       `<button class="auth-signout" onclick="redoPlan()">redo plan</button>` +
       `<button class="auth-signout" onclick="clearHistory()">clear history</button>` +
       `<button class="auth-signout" onclick="doSignOut()">sign out</button>`;
@@ -2531,6 +2533,93 @@ async function doSignOut(){
   await _sb.auth.signOut();
 }
 
+/* ── USERNAME PICKER (Phase 0) ── */
+let _unResolve = null;   // resolve fn for the currently-open picker
+let _unValid   = null;   // last validated, available handle (string) or null
+let _unTimer   = null;   // debounce timer for availability checks
+
+// Opens the picker and resolves with a chosen, available handle. opts.mode:
+// 'onboard' (new user) | 'backfill' (existing user without a handle).
+function promptUsername(opts){
+  opts = opts || {};
+  _unValid = null;
+  const backfill = opts.mode === 'backfill';
+  return new Promise(resolve=>{
+    _unResolve = resolve;
+    const ov = document.getElementById('usernameOverlay');
+    ov.innerHTML = `
+      <div class="ob-wrap">
+        <div class="ob-logo">PLAN<span>·</span>PPL</div>
+        <div class="ob-title">${backfill ? 'Pick your handle' : 'Choose a username'}</div>
+        <div class="ob-sub">${backfill
+          ? 'Set a unique @handle so friends can find you and you can join leaderboards.'
+          : 'This is how friends find you and how you appear on leaderboards.'}</div>
+        <div class="un-field">
+          <span class="un-at">@</span>
+          <input id="unInput" class="un-input" type="text" autocomplete="off"
+                 autocapitalize="none" autocorrect="off" spellcheck="false"
+                 maxlength="20" placeholder="yourhandle"
+                 oninput="_onUsernameInput(this)"
+                 onkeydown="if(event.key==='Enter')_confirmUsername()">
+        </div>
+        <div id="unStatus" class="un-status"></div>
+        <div class="un-hint">3–20 characters · letters, numbers and underscores only. You can change this later.</div>
+        <div class="ob-nav" style="margin-top:24px;">
+          <div></div>
+          <button id="unConfirm" class="ob-btn-next disabled" disabled onclick="_confirmUsername()">Continue →</button>
+        </div>
+      </div>`;
+    ov.style.display = 'flex';
+    setTimeout(()=>{ const i=document.getElementById('unInput'); if(i) i.focus(); }, 60);
+  });
+}
+
+async function _checkUsername(v){
+  if(!/^[A-Za-z0-9_]{3,20}$/.test(v)){
+    return { ok:false, cls:'err', msg: v.length<3 ? 'At least 3 characters' : 'Only letters, numbers and _' };
+  }
+  try{
+    const { data, error } = await _sb.from('public_profiles').select('user_id').ilike('username', v).limit(1);
+    if(error) throw error;
+    const row = (data||[])[0];
+    if(row && row.user_id !== _currentUser?.id) return { ok:false, cls:'err', msg:'That handle is already taken' };
+    return { ok:true, cls:'ok', msg:'Available' };
+  }catch(e){
+    // Directory unreachable (e.g. migration not applied yet) — don't block the
+    // user; the DB's unique constraint is the ultimate backstop on save.
+    console.warn('username availability check failed:', e);
+    return { ok:true, cls:'', msg:'' };
+  }
+}
+
+function _onUsernameInput(el){
+  const v = el.value.trim();
+  const status = document.getElementById('unStatus');
+  const btn = document.getElementById('unConfirm');
+  _unValid = null;
+  btn.disabled = true; btn.classList.add('disabled');
+  clearTimeout(_unTimer);
+  if(!v){ status.textContent=''; status.className='un-status'; return; }
+  status.textContent = 'Checking…'; status.className = 'un-status checking';
+  _unTimer = setTimeout(async ()=>{
+    if(el.value.trim() !== v) return;           // superseded by newer keystroke
+    const r = await _checkUsername(v);
+    if(el.value.trim() !== v) return;
+    status.textContent = r.msg;
+    status.className = 'un-status ' + r.cls;
+    if(r.ok){ _unValid = v; btn.disabled = false; btn.classList.remove('disabled'); }
+  }, 350);
+}
+
+function _confirmUsername(){
+  if(!_unValid) return;
+  const val = _unValid;
+  document.getElementById('usernameOverlay').style.display = 'none';
+  const resolve = _unResolve;
+  _unResolve = null; _unValid = null;
+  if(resolve) resolve(val);
+}
+
 async function onSignedIn(user){
   if(_currentUser?.id === user.id) return;
   _currentUser = user;
@@ -2540,6 +2629,22 @@ async function onSignedIn(user){
       hideAuthOverlay();
       showOnboarding();
       return;
+    }
+    _username = profile.username || null;
+    if(!_username){
+      // Existing user from before handles existed — backfill one now.
+      hideAuthOverlay();
+      const uname = await promptUsername({ mode:'backfill' });
+      const { error } = await _sb.from('user_profiles').update({ username: uname }).eq('user_id', user.id);
+      if(error){
+        // Almost always a unique-constraint race (handle taken between check & save).
+        console.error('username save failed:', error);
+        alert('Could not save that handle — it may have just been taken. Please sign in again and pick another.');
+        _currentUser = null;
+        showAuthOverlay();
+        return;
+      }
+      _username = uname;
     }
     if(profile.plan && Array.isArray(profile.plan)) DAYS = normalizePlan(profile.plan);
     await _finishSignIn(user, profile); // hideAuthOverlay() called inside after render
@@ -2695,8 +2800,10 @@ const OB_STEPS = [
     ]},
 ];
 
-function showOnboarding(){
-  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'' };
+async function showOnboarding(){
+  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'', username:null };
+  // New users pick a handle first; existing users (e.g. "redo plan") keep theirs.
+  _ob.username = _username || await promptUsername({ mode:'onboard' });
   document.getElementById('onboardingOverlay').style.display='flex';
   _renderObStep();
 }
@@ -2817,17 +2924,21 @@ async function obGenerate(){
       injuries:baseInjuries, plan,
       program_weeks:_ob.programWeeks, program_start_date:today,
     };
+    if(_ob.username) profileData.username = _ob.username;
     const { error: insertErr } = await _sb.from('user_profiles').insert(profileData);
     if(insertErr){
       // Row exists — update it directly
-      const { error: updateErr } = await _sb.from('user_profiles').update({
+      const updateData = {
         experience:_ob.experience, equipment:_ob.equipment,
         goal:_ob.goal, days_per_week:_ob.daysPerWeek,
         injuries:baseInjuries, plan,
         program_weeks:_ob.programWeeks, program_start_date:today,
-      }).eq('user_id',_currentUser.id);
+      };
+      if(_ob.username) updateData.username = _ob.username;
+      const { error: updateErr } = await _sb.from('user_profiles').update(updateData).eq('user_id',_currentUser.id);
       if(updateErr) throw new Error(updateErr.message);
     }
+    if(_ob.username) _username = _ob.username;
     DAYS = normalizePlan(plan);
     hideOnboarding();
     await _finishSignIn(_currentUser, {
@@ -4758,9 +4869,43 @@ if ('serviceWorker' in navigator) {
   background:none;border:none;color:var(--muted);font-size:20px;
   cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0;
 }
+
+/* ── USERNAME PICKER ── */
+#usernameOverlay{
+  position:fixed;inset:0;background:var(--bg);
+  z-index:1100;display:none;flex-direction:column;
+  align-items:center;overflow-y:auto;
+  padding:calc(48px + env(safe-area-inset-top)) 24px 48px;
+}
+.un-field{
+  display:flex;align-items:center;width:100%;max-width:400px;
+  background:var(--card);border:1px solid var(--border2);border-radius:12px;
+  padding:0 14px;margin-top:8px;transition:border-color .2s;
+}
+.un-field:focus-within{border-color:var(--accent);}
+.un-at{color:var(--muted);font-size:18px;font-weight:600;padding-right:2px;}
+.un-input{
+  flex:1;background:none;border:none;outline:none;color:var(--white);
+  font-size:18px;padding:14px 6px;font-family:inherit;letter-spacing:.5px;
+}
+.un-status{
+  width:100%;max-width:400px;margin-top:10px;min-height:18px;
+  font-size:13px;font-weight:600;text-align:left;padding-left:2px;
+}
+.un-status.ok{color:#37d67a;}
+.un-status.err{color:var(--accent);}
+.un-status.checking{color:var(--muted);}
+.un-hint{width:100%;max-width:400px;color:var(--muted);font-size:12px;margin-top:14px;line-height:1.5;text-align:left;}
 </style>
 <script>
 (function(){
+  // ── USERNAME OVERLAY ──
+  (function(){
+    const el = document.createElement('div');
+    el.id = 'usernameOverlay';
+    document.body.appendChild(el);
+  })();
+
   // ── ONBOARDING OVERLAY ──
   (function(){
     const ob = document.createElement('div');
