@@ -1,0 +1,123 @@
+<!--
+  PLAN·PPL — "Confirm signup" email template.
+  Paste into: Supabase Dashboard → Authentication → Email Templates → Confirm signup.
+  Uses the Supabase variable {{ .ConfirmationURL }}. Table + inline-style layout
+  for email-client compatibility; committed to the app's dark brand look.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;background-color:#080b0f;">
+  <tr>
+    <td align="center" style="padding:32px 16px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#0d1117;border:1px solid #1e2a38;border-radius:16px;">
+        <tr>
+          <td style="padding:40px 40px 8px 40px;">
+
+            <!-- Wordmark -->
+            <div style="font-size:24px;font-weight:800;letter-spacing:4px;color:#f0f4f8;text-transform:uppercase;">
+              PLAN<span style="color:#e8f04a;">&middot;</span>PPL
+            </div>
+            <div style="margin-top:6px;font-size:11px;letter-spacing:2px;color:#6b8298;text-transform:uppercase;font-weight:700;">
+              AI Training Platform
+            </div>
+
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 40px 0 40px;">
+
+            <!-- Headline -->
+            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:800;color:#f0f4f8;">
+              You're one tap from<br>your first session.
+            </h1>
+
+            <!-- Copy -->
+            <p style="margin:18px 0 0 0;font-size:16px;line-height:1.6;color:#a7b6c4;">
+              Confirm your email and we'll build you a personalised Push / Pull / Legs
+              programme &mdash; shaped around your goals, equipment and schedule.
+            </p>
+
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 40px 8px 40px;">
+
+            <!-- Bulletproof CTA -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td bgcolor="#e8f04a" style="border-radius:10px;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank"
+                     style="display:inline-block;padding:16px 36px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:.3px;color:#080b0f;text-decoration:none;border-radius:10px;">
+                    Confirm my email &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 40px 0 40px;">
+            <hr style="border:none;border-top:1px solid #1e2a38;margin:0;">
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 40px 8px 40px;">
+
+            <!-- What you get — markers are the Push/Pull/Legs brand colours -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="16" valign="top" style="padding:6px 0;">
+                  <div style="width:10px;height:10px;border-radius:2px;background-color:#ff4e3a;"></div>
+                </td>
+                <td style="padding:2px 0 10px 12px;font-size:15px;line-height:1.5;color:#cdd8e2;">
+                  A Push / Pull / Legs split, programmed for you by AI
+                </td>
+              </tr>
+              <tr>
+                <td width="16" valign="top" style="padding:6px 0;">
+                  <div style="width:10px;height:10px;border-radius:2px;background-color:#3ab8ff;"></div>
+                </td>
+                <td style="padding:2px 0 10px 12px;font-size:15px;line-height:1.5;color:#cdd8e2;">
+                  Track every set, rep and session &mdash; works offline
+                </td>
+              </tr>
+              <tr>
+                <td width="16" valign="top" style="padding:6px 0;">
+                  <div style="width:10px;height:10px;border-radius:2px;background-color:#e8f04a;"></div>
+                </td>
+                <td style="padding:2px 0 10px 12px;font-size:15px;line-height:1.5;color:#cdd8e2;">
+                  Add friends, share programmes and climb the streak board
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 40px 40px 40px;">
+
+            <!-- Fallback link -->
+            <p style="margin:0 0 4px 0;font-size:12px;line-height:1.5;color:#6b8298;">
+              Button not working? Paste this link into your browser:
+            </p>
+            <p style="margin:0;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color:#4af0b8;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+            </p>
+
+          </td>
+        </tr>
+      </table>
+
+      <!-- Footer -->
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+        <tr>
+          <td style="padding:20px 24px;text-align:center;font-size:12px;line-height:1.6;color:#4a6070;">
+            You're receiving this because someone signed up for PLAN&middot;PPL with this
+            address. If that wasn't you, you can safely ignore this email.
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
