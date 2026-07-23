@@ -3261,10 +3261,14 @@ function syncActiveDayToToday(){
   const idx = _utcDow - 1; // Mon(1)→0, Tue(2)→1, Wed(3)→2, Thu(4)→3, Fri(5)→4, Sat(6)→5
   if(idx >= 0 && idx < DAYS.length){
     const day = DAYS[idx];
-    activeView = (day.type==='rest') ? 'rest' : 'day';
+    // A plan recovery day (type==='rest') is still a real day in the plan — render it via
+    // the 'day' view so its own weekday tab stays active. The 'rest' view is reserved for
+    // Sunday (the implicit off-day), which renderRest() hardcodes as "SUNDAY".
+    activeView = 'day';
     activeDay  = day.id;
     return;
   }
+  activeView = 'day';
   activeDay = DAYS[0].id;
 }
 let activeDay = 0;
