@@ -1,0 +1,15 @@
+{
+  "name": "ppl-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PPL training split PWA — single-file app + Playwright tests",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}
