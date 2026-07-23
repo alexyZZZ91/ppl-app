@@ -2301,6 +2301,9 @@ body{
 <!-- Friends view — hidden until FRIENDS tab is active -->
 <div class="main" id="friendsContent" style="display:none;"></div>
 
+<!-- Leaderboard view — hidden until RANKS tab is active -->
+<div class="main" id="boardContent" style="display:none;"></div>
+
 <script>
 /* ── SUPABASE ── */
 const SUPABASE_URL = 'https://ukylutrjetyrabqlntsc.supabase.co';
@@ -2393,6 +2396,8 @@ async function _finishSignIn(user, profile){
     if(profile?.program_weeks)      _programWeeks     = profile.program_weeks;
     if(profile?.program_start_date) _programStartDate = profile.program_start_date;
     if(profile?.experience)         _userExperience   = profile.experience;
+    if(profile?.days_per_week)      _weeklyGoal       = profile.days_per_week;
+    _isPublic = !!profile?.is_public;
     await loadDataFromCloud();
     syncActiveDayToToday(); // runs after data load so last-completed session is available
     try{
@@ -2421,6 +2426,8 @@ async function _finishSignIn(user, profile){
     setupNotifications();
     // Load friend data in the background so the request badge shows on the tab.
     loadFriendData().then(()=>{ if(_currentUser) renderTabs(); });
+    // Keep my leaderboard streak current on each sign-in.
+    syncUserStats();
     // Show programme completion overlay if the block has ended
     setTimeout(checkProgrammeComplete, 600);
   }catch(err){
@@ -2665,6 +2672,8 @@ function onSignedOut(){
   _currentUser = null;
   _username = null;
   _friendData = { friends:[], incoming:[], outgoing:[] };
+  _isPublic = false;
+  _boardMode = 'friends';
   appData = { checked:{}, sessions:{} };
   showAuthOverlay();
   const el = document.getElementById('hdrUser');
@@ -3204,6 +3213,7 @@ function completeDay(dayId){
   appData.sessions[today][dayId]._completed = new Date().toISOString();
   saveData(appData);
   renderDay(); renderTabs(); updateProg();
+  syncUserStats(); // update my leaderboard streak in the background
   // Check if the whole programme has ended (runs after the data save)
   setTimeout(checkProgrammeComplete, 400);
 }
@@ -3356,6 +3366,8 @@ let DAYS = DEFAULT_DAYS;
 let _programWeeks = 8;
 let _programStartDate = null; // 'YYYY-MM-DD'
 let _userExperience = 'Intermediate'; // set from profile on sign-in
+let _weeklyGoal = 6;   // days_per_week target, set from profile on sign-in
+let _isPublic = false; // opt-in to the global leaderboard, from profile
 
 // Exercise guide cache — persisted to localStorage so each exercise is only fetched once
 // v2: entries are { guide, gifUrl } — bump key to invalidate old format
@@ -3524,6 +3536,151 @@ function getTrainingStreak(){
     check.setDate(check.getDate()-1);
   }
   return streak;
+}
+
+/* ── LEADERBOARD / STREAK (Phase 2) ── */
+let _boardMode = 'friends';   // 'friends' | 'global'
+
+// Monday (UTC) of the week containing dateStr ('YYYY-MM-DD'), as 'YYYY-MM-DD'.
+function _mondayOf(dateStr){
+  const d = new Date(dateStr+'T00:00:00Z');
+  const dow = d.getUTCDay();                 // 0=Sun..6=Sat
+  d.setUTCDate(d.getUTCDate() - (dow===0 ? 6 : dow-1));
+  return d.toISOString().slice(0,10);
+}
+function _shiftWeek(mondayStr, weeks){
+  const d = new Date(mondayStr+'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + weeks*7);
+  return d.toISOString().slice(0,10);
+}
+
+// Pure: weekly-goal streak from session history. A week "counts" when trained
+// days >= weeklyGoal. The in-progress current week never breaks the streak; it
+// only adds once met.
+function computeStreakStats(sessions, weeklyGoal, todayStr){
+  const goal  = Math.max(1, weeklyGoal||1);
+  const today = todayStr || getToday();
+  const weekCounts = {};
+  for(const date in (sessions||{})){
+    const dayMap = sessions[date];
+    const trained = dayMap && Object.values(dayMap).some(d=>d && d._completed);
+    if(!trained) continue;
+    weekCounts[_mondayOf(date)] = (weekCounts[_mondayOf(date)]||0) + 1;
+  }
+  const met = wk => (weekCounts[wk]||0) >= goal;
+  const totalSessions = Object.values(weekCounts).reduce((a,b)=>a+b,0);
+
+  // Current streak: walk back from this week (grace for the in-progress week).
+  const thisWeek = _mondayOf(today);
+  let current = 0, cursor = thisWeek;
+  if(met(cursor)) current++;
+  cursor = _shiftWeek(cursor, -1);
+  while(met(cursor)){ current++; cursor = _shiftWeek(cursor, -1); }
+
+  // Longest streak: scan every week from the first trained week to this week.
+  const keys = Object.keys(weekCounts).sort();
+  let longest = 0;
+  if(keys.length){
+    let run = 0, wk = keys[0];
+    while(wk <= thisWeek){
+      if(met(wk)){ run++; if(run>longest) longest = run; } else run = 0;
+      wk = _shiftWeek(wk, 1);
+    }
+  }
+  if(current > longest) longest = current;
+
+  return { current, longest, totalSessions,
+    thisWeekCount: weekCounts[thisWeek]||0, thisWeekMet: met(thisWeek), weeklyGoal: goal };
+}
+
+// Compute my stats and upsert to the shared table that powers the leaderboard.
+async function syncUserStats(){
+  if(!_currentUser) return;
+  const s = computeStreakStats(appData.sessions, _weeklyGoal, getToday());
+  const { error } = await _sb.from('user_stats').upsert({
+    user_id:        _currentUser.id,
+    username:       _username,
+    is_public:      _isPublic,
+    current_streak: s.current,
+    longest_streak: s.longest,
+    weekly_goal:    _weeklyGoal,
+    total_sessions: s.totalSessions,
+    updated_at:     new Date().toISOString(),
+  }, { onConflict:'user_id' });
+  if(error) console.error('syncUserStats:', error);
+}
+
+async function loadBoard(mode){
+  if(!_currentUser) return [];
+  let q = _sb.from('user_stats').select('user_id,username,current_streak,longest_streak,total_sessions');
+  if(mode === 'global'){
+    q = q.eq('is_public', true);
+  } else {
+    q = q.in('user_id', [_currentUser.id, ..._friendData.friends.map(f=>f.otherId)]);
+  }
+  const { data, error } = await q
+    .order('current_streak', { ascending:false })
+    .order('longest_streak', { ascending:false })
+    .limit(50);
+  if(error){ console.error('loadBoard:', error); return []; }
+  return data || [];
+}
+
+async function togglePublic(){
+  _isPublic = !_isPublic;
+  if(_currentUser){
+    await _sb.from('user_profiles').update({ is_public:_isPublic }).eq('user_id', _currentUser.id);
+    await syncUserStats();
+  }
+  renderBoard();
+}
+
+/* ── LEADERBOARD UI ── */
+async function switchBoard(){
+  activeView='board';
+  _showView('boardContent');
+  renderTabs();
+  document.getElementById('boardContent').innerHTML = '<div class="lb-wrap"><div class="fr-searching">Loading…</div></div>';
+  await Promise.all([ syncUserStats(), (_friendData.friends.length ? Promise.resolve() : loadFriendData()) ]);
+  if(activeView!=='board') return;
+  renderBoard();
+  document.getElementById('boardContent').scrollTop=0;
+}
+
+function setBoardMode(mode){ _boardMode = mode; renderBoard(); }
+
+async function renderBoard(){
+  const mode = _boardMode;
+  document.getElementById('boardContent').innerHTML = `
+    <div class="lb-wrap">
+      <div class="lb-toggle">
+        <button class="lb-seg ${mode==='friends'?'active':''}" onclick="setBoardMode('friends')">Friends</button>
+        <button class="lb-seg ${mode==='global'?'active':''}" onclick="setBoardMode('global')">Global</button>
+      </div>
+      <div class="lb-caption">Weekly consistency — consecutive weeks hitting your training goal.</div>
+      <div id="lbList" class="lb-list"><div class="fr-searching">Loading…</div></div>
+      ${mode==='global' ? `<label class="lb-optin"><input type="checkbox" ${_isPublic?'checked':''} onchange="togglePublic()"> Show me on the global board</label>` : ''}
+    </div>`;
+  const rows = await loadBoard(mode);
+  if(_boardMode !== mode) return; // toggled while loading
+  const list = document.getElementById('lbList');
+  if(!list) return;
+  if(!rows.length){
+    list.innerHTML = mode==='global'
+      ? `<div class="fr-empty">No one on the global board yet — opt in below to be first!</div>`
+      : `<div class="fr-empty">Add friends to see how your consistency stacks up.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map((r,i)=>{
+    const isMe  = r.user_id === _currentUser.id;
+    const medal = ['🥇','🥈','🥉'][i] || `<span class="lb-rank">${i+1}</span>`;
+    return `<div class="lb-row ${isMe?'me':''}">
+      <div class="lb-pos">${medal}</div>
+      <div class="lb-avatar">${(r.username||'?').slice(0,1).toUpperCase()}</div>
+      <div class="lb-name">@${r.username||'unknown'}${isMe?' <span class="lb-you">you</span>':''}</div>
+      <div class="lb-streak">${r.current_streak}<span class="lb-wk">wk</span></div>
+    </div>`;
+  }).join('');
 }
 
 function updateProg(){
@@ -3859,11 +4016,17 @@ function renderTabs(){
       <span class="d-dot"></span>
       ${nReq>0?`<span class="fr-badge">${nReq}</span>`:'<span class="done-pip" style="display:none"></span>'}
     </button>`;
-  document.getElementById('dayStrip').innerHTML = weekBtns + friendsBtn + histBtn;
+  const boardBtn = `<button class="day-btn hist ${activeView==='board'?'active':''}" onclick="switchBoard()">
+      <span class="d-num" style="font-size:16px;padding-top:3px;">🏆</span>
+      <span class="d-type">ranks</span>
+      <span class="d-dot"></span>
+      <span class="done-pip" style="display:none"></span>
+    </button>`;
+  document.getElementById('dayStrip').innerHTML = weekBtns + friendsBtn + boardBtn + histBtn;
 }
 
 function _showView(containerId){
-  ['mainContent','histContent','friendsContent'].forEach(c=>{
+  ['mainContent','histContent','friendsContent','boardContent'].forEach(c=>{
     const el = document.getElementById(c);
     if(el) el.style.display = (c===containerId) ? '' : 'none';
   });
@@ -5087,6 +5250,31 @@ if ('serviceWorker' in navigator) {
 .fr-btn.ghost{background:transparent;border:1px solid var(--border2);color:var(--muted);}
 .fr-btn.ghost:hover{color:var(--white);border-color:var(--white);}
 .fr-pending{color:var(--muted);font-size:12px;font-weight:700;}
+
+/* ── LEADERBOARD ── */
+.lb-wrap{max-width:600px;margin:0 auto;padding:16px 14px 40px;}
+.lb-toggle{display:flex;gap:4px;background:var(--panel);border:1px solid var(--border2);
+  border-radius:12px;padding:4px;margin-bottom:12px;}
+.lb-seg{flex:1;border:none;background:transparent;color:var(--muted);font-family:inherit;
+  font-size:13px;font-weight:800;letter-spacing:.5px;padding:9px 0;border-radius:9px;cursor:pointer;}
+.lb-seg.active{background:var(--accent);color:#fff;}
+.lb-caption{color:var(--muted);font-size:12px;line-height:1.5;margin:0 2px 16px;}
+.lb-list{display:flex;flex-direction:column;gap:8px;}
+.lb-row{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;padding:10px 14px;}
+.lb-row.me{border-color:var(--accent);background:rgba(255,78,58,.08);}
+.lb-pos{width:26px;flex-shrink:0;text-align:center;font-size:18px;}
+.lb-rank{color:var(--muted);font-size:14px;font-weight:800;}
+.lb-avatar{width:34px;height:34px;flex-shrink:0;border-radius:50%;background:var(--border2);
+  color:var(--white);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.lb-name{flex:1;min-width:0;color:var(--white);font-weight:600;font-size:15px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-you{color:var(--accent);font-size:11px;font-weight:800;text-transform:uppercase;margin-left:4px;}
+.lb-streak{flex-shrink:0;color:var(--accent);font-weight:900;font-size:20px;line-height:1;}
+.lb-wk{color:var(--muted);font-size:11px;font-weight:700;margin-left:2px;}
+.lb-optin{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;
+  margin-top:20px;padding:0 2px;cursor:pointer;}
+.lb-optin input{width:16px;height:16px;accent-color:var(--accent);}
 </style>
 <script>
 (function(){
