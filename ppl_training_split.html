@@ -2298,6 +2298,9 @@ body{
 <!-- History view — hidden until HIST tab is active -->
 <div class="main" id="histContent" style="display:none;"></div>
 
+<!-- Friends view — hidden until FRIENDS tab is active -->
+<div class="main" id="friendsContent" style="display:none;"></div>
+
 <script>
 /* ── SUPABASE ── */
 const SUPABASE_URL = 'https://ukylutrjetyrabqlntsc.supabase.co';
@@ -2305,6 +2308,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let _currentUser = null;
 let _username = null;
+let _friendData = { friends:[], incoming:[], outgoing:[] };
 
 /* ── DATA HELPERS ── */
 function getToday(){ return new Date().toISOString().slice(0,10); }
@@ -2415,6 +2419,8 @@ async function _finishSignIn(user, profile){
     }
     hideAuthOverlay();
     setupNotifications();
+    // Load friend data in the background so the request badge shows on the tab.
+    loadFriendData().then(()=>{ if(_currentUser) renderTabs(); });
     // Show programme completion overlay if the block has ended
     setTimeout(checkProgrammeComplete, 600);
   }catch(err){
@@ -2657,6 +2663,8 @@ async function onSignedIn(user){
 
 function onSignedOut(){
   _currentUser = null;
+  _username = null;
+  _friendData = { friends:[], incoming:[], outgoing:[] };
   appData = { checked:{}, sessions:{} };
   showAuthOverlay();
   const el = document.getElementById('hdrUser');
@@ -3844,31 +3852,186 @@ function renderTabs(){
       <span class="d-dot"></span>
       <span class="done-pip" style="display:none"></span>
     </button>`;
-  document.getElementById('dayStrip').innerHTML = weekBtns + histBtn;
+  const nReq = (_friendData.incoming||[]).length;
+  const friendsBtn = `<button class="day-btn hist ${activeView==='friends'?'active':''}" onclick="switchFriends()">
+      <span class="d-num" style="font-size:16px;padding-top:3px;">👥</span>
+      <span class="d-type">friends</span>
+      <span class="d-dot"></span>
+      ${nReq>0?`<span class="fr-badge">${nReq}</span>`:'<span class="done-pip" style="display:none"></span>'}
+    </button>`;
+  document.getElementById('dayStrip').innerHTML = weekBtns + friendsBtn + histBtn;
+}
+
+function _showView(containerId){
+  ['mainContent','histContent','friendsContent'].forEach(c=>{
+    const el = document.getElementById(c);
+    if(el) el.style.display = (c===containerId) ? '' : 'none';
+  });
 }
 
 function switchDay(id){
   activeView='day'; activeDay=id;
-  document.getElementById('mainContent').style.display='';
-  document.getElementById('histContent').style.display='none';
+  _showView('mainContent');
   renderTabs(); renderDay();
   document.getElementById('mainContent').scrollTop=0;
 }
 
 function switchHist(){
   activeView='hist';
-  document.getElementById('mainContent').style.display='none';
-  document.getElementById('histContent').style.display='';
+  _showView('histContent');
   renderTabs(); renderHist();
   document.getElementById('histContent').scrollTop=0;
 }
 
 function switchRest(){
   activeView='rest';
-  document.getElementById('mainContent').style.display='';
-  document.getElementById('histContent').style.display='none';
+  _showView('mainContent');
   renderTabs(); renderRest();
   document.getElementById('mainContent').scrollTop=0;
+}
+
+async function switchFriends(){
+  activeView='friends';
+  _showView('friendsContent');
+  renderTabs();
+  document.getElementById('friendsContent').innerHTML = '<div class="fr-wrap"><div class="fr-searching">Loading…</div></div>';
+  await loadFriendData();
+  if(activeView!=='friends') return; // navigated away while loading
+  renderTabs(); // refresh request badge
+  renderFriends();
+  document.getElementById('friendsContent').scrollTop=0;
+}
+
+/* ── FRIENDS DATA (Phase 1) ── */
+let _frSearchTimer = null;
+
+// Classify the current relationship with another user from cached friend data.
+function _relStatus(otherId){
+  const f = _friendData.friends.find(x=>x.otherId===otherId);   if(f) return { status:'friends',  rowId:f.rowId };
+  const i = _friendData.incoming.find(x=>x.otherId===otherId);  if(i) return { status:'incoming', rowId:i.rowId };
+  const o = _friendData.outgoing.find(x=>x.otherId===otherId);  if(o) return { status:'outgoing', rowId:o.rowId };
+  return { status:'none' };
+}
+
+async function loadFriendData(){
+  _friendData = { friends:[], incoming:[], outgoing:[] };
+  if(!_currentUser) return;
+  const me = _currentUser.id;
+  const { data, error } = await _sb.from('friendships')
+    .select('id,requester_id,addressee_id,status')
+    .or(`requester_id.eq.${me},addressee_id.eq.${me}`);
+  if(error){ console.error('loadFriendData:', error); return; }
+  const friends=[], incoming=[], outgoing=[];
+  for(const r of (data||[])){
+    const otherId = r.requester_id===me ? r.addressee_id : r.requester_id;
+    if(r.status==='accepted')    friends.push({ rowId:r.id, otherId });
+    else if(r.addressee_id===me) incoming.push({ rowId:r.id, otherId });
+    else                         outgoing.push({ rowId:r.id, otherId });
+  }
+  // Resolve handles for everyone referenced.
+  const ids = [...friends, ...incoming, ...outgoing].map(x=>x.otherId);
+  const names = {};
+  if(ids.length){
+    const { data:profs } = await _sb.from('public_profiles').select('user_id,username').in('user_id', ids);
+    (profs||[]).forEach(p=>{ names[p.user_id]=p.username; });
+  }
+  [friends, incoming, outgoing].forEach(list=>list.forEach(x=>{ x.username = names[x.otherId] || 'unknown'; }));
+  _friendData = { friends, incoming, outgoing };
+}
+
+async function friendSearch(q){
+  const term = (q||'').trim();
+  if(term.length < 2) return [];
+  const me = _currentUser?.id;
+  const { data, error } = await _sb.from('public_profiles')
+    .select('user_id,username').ilike('username', `%${term}%`).limit(10);
+  if(error){ console.error('friendSearch:', error); return []; }
+  return (data||[])
+    .filter(p=>p.user_id !== me)
+    .map(p=>({ userId:p.user_id, username:p.username, rel:_relStatus(p.user_id) }));
+}
+
+async function sendFriendRequest(otherId){
+  const rel = _relStatus(otherId);
+  if(rel.status==='incoming') return acceptFriendRequest(rel.rowId); // they invited me first
+  if(rel.status!=='none') return;
+  const { error } = await _sb.from('friendships')
+    .insert({ requester_id:_currentUser.id, addressee_id:otherId, status:'pending' });
+  if(error){ console.error('sendFriendRequest:', error); alert('Could not send request — please try again.'); return; }
+  await loadFriendData(); renderTabs(); renderFriends();
+}
+
+async function acceptFriendRequest(rowId){
+  const { error } = await _sb.from('friendships')
+    .update({ status:'accepted', updated_at:new Date().toISOString() }).eq('id', rowId);
+  if(error){ console.error('acceptFriendRequest:', error); return; }
+  await loadFriendData(); renderTabs(); renderFriends();
+}
+
+async function removeFriendship(rowId){
+  const { error } = await _sb.from('friendships').delete().eq('id', rowId);
+  if(error){ console.error('removeFriendship:', error); return; }
+  await loadFriendData(); renderTabs(); renderFriends();
+}
+
+/* ── FRIENDS UI ── */
+function _frRow(username, actionsHTML){
+  const initial = (username||'?').slice(0,1).toUpperCase();
+  return `<div class="fr-row">
+    <div class="fr-avatar">${initial}</div>
+    <div class="fr-name">@${username}</div>
+    <div class="fr-actions">${actionsHTML}</div>
+  </div>`;
+}
+
+function renderFriends(){
+  const { friends, incoming, outgoing } = _friendData;
+  const inc = incoming.map(x=>_frRow(x.username,
+    `<button class="fr-btn accept" onclick="acceptFriendRequest('${x.rowId}')">Accept</button>
+     <button class="fr-btn ghost" onclick="removeFriendship('${x.rowId}')">Decline</button>`)).join('');
+  const fri = friends.map(x=>_frRow(x.username,
+    `<button class="fr-btn ghost" onclick="removeFriendship('${x.rowId}')">Remove</button>`)).join('');
+  const out = outgoing.map(x=>_frRow(x.username,
+    `<span class="fr-pending">Pending</span>
+     <button class="fr-btn ghost" onclick="removeFriendship('${x.rowId}')">Cancel</button>`)).join('');
+
+  document.getElementById('friendsContent').innerHTML = `
+    <div class="fr-wrap">
+      <div class="fr-searchbox">
+        <input id="frSearch" class="fr-search-input" type="text" autocomplete="off"
+               autocapitalize="none" spellcheck="false" placeholder="Find people by @username…"
+               oninput="_onFriendSearch(this)">
+        <div id="frResults" class="fr-results"></div>
+      </div>
+      ${incoming.length ? `<div class="fr-section-title">Requests · ${incoming.length}</div>${inc}` : ''}
+      <div class="fr-section-title">Friends · ${friends.length}</div>
+      ${friends.length ? fri : `<div class="fr-empty">No friends yet — search a @username above to connect.</div>`}
+      ${outgoing.length ? `<div class="fr-section-title">Sent · ${outgoing.length}</div>${out}` : ''}
+    </div>`;
+}
+
+function _onFriendSearch(el){
+  const q = el.value;
+  const box = document.getElementById('frResults');
+  clearTimeout(_frSearchTimer);
+  if(q.trim().length < 2){ box.innerHTML=''; return; }
+  box.innerHTML = `<div class="fr-searching">Searching…</div>`;
+  _frSearchTimer = setTimeout(async ()=>{
+    if(document.getElementById('frSearch')?.value !== q) return;
+    const results = await friendSearch(q);
+    if(document.getElementById('frSearch')?.value !== q) return;
+    if(!results.length){ box.innerHTML = `<div class="fr-searching">No one found.</div>`; return; }
+    box.innerHTML = results.map(r=>{
+      let action;
+      switch(r.rel.status){
+        case 'friends':  action = `<span class="fr-pending">✓ Friends</span>`; break;
+        case 'outgoing': action = `<span class="fr-pending">Pending</span>`; break;
+        case 'incoming': action = `<button class="fr-btn accept" onclick="acceptFriendRequest('${r.rel.rowId}')">Accept</button>`; break;
+        default:         action = `<button class="fr-btn add" onclick="sendFriendRequest('${r.userId}')">Add</button>`;
+      }
+      return _frRow(r.username, action);
+    }).join('');
+  }, 300);
 }
 
 function _getWeekStats(){
@@ -4896,6 +5059,34 @@ if ('serviceWorker' in navigator) {
 .un-status.err{color:var(--accent);}
 .un-status.checking{color:var(--muted);}
 .un-hint{width:100%;max-width:400px;color:var(--muted);font-size:12px;margin-top:14px;line-height:1.5;text-align:left;}
+
+/* ── FRIENDS ── */
+.fr-badge{position:absolute;top:4px;right:8px;min-width:16px;height:16px;padding:0 4px;
+  background:var(--accent);color:#fff;font-size:10px;font-weight:800;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;line-height:1;}
+.fr-wrap{max-width:600px;margin:0 auto;padding:16px 14px 40px;}
+.fr-searchbox{margin-bottom:8px;}
+.fr-search-input{width:100%;background:var(--card);border:1px solid var(--border2);
+  border-radius:12px;color:var(--white);font-size:15px;padding:13px 14px;outline:none;font-family:inherit;}
+.fr-search-input:focus{border-color:var(--accent);}
+.fr-results{margin-top:8px;}
+.fr-searching{color:var(--muted);font-size:13px;padding:10px 4px;}
+.fr-section-title{color:var(--muted);font-size:11px;font-weight:800;letter-spacing:1.5px;
+  text-transform:uppercase;margin:22px 2px 10px;}
+.fr-empty{color:var(--muted);font-size:13px;padding:10px 4px;line-height:1.5;}
+.fr-row{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+.fr-avatar{width:38px;height:38px;flex-shrink:0;border-radius:50%;background:var(--border2);
+  color:var(--white);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.fr-name{flex:1;min-width:0;color:var(--white);font-weight:600;font-size:15px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fr-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.fr-btn{border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;}
+.fr-btn.add,.fr-btn.accept{background:var(--accent);color:#fff;}
+.fr-btn.ghost{background:transparent;border:1px solid var(--border2);color:var(--muted);}
+.fr-btn.ghost:hover{color:var(--white);border-color:var(--white);}
+.fr-pending{color:var(--muted);font-size:12px;font-weight:700;}
 </style>
 <script>
 (function(){
