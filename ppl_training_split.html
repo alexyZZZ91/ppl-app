@@ -2779,7 +2779,7 @@ document.addEventListener('visibilitychange', async ()=>{
 /* ── ONBOARDING ── */
 const EDGE_FN = 'https://ukylutrjetyrabqlntsc.supabase.co/functions/v1/hyper-responder';
 
-let _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'' };
+let _ob = { step:0, experience:null, equipment:null, goal:[], daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'' };
 
 const OB_STEPS = [
   { key:'experience', title:'Experience Level', sub:'How long have you been training consistently?', type:'card',
@@ -2797,7 +2797,7 @@ const OB_STEPS = [
       {value:'Kettlebells',      icon:'🫙', label:'Kettlebells'},
       {value:'Bodyweight only',  icon:'🏠', label:'Bodyweight'},
     ]},
-  { key:'goal', title:'Primary Goal', sub:'What are you training for?', type:'card',
+  { key:'goal', title:'Primary Goal', sub:'What are you training for? Pick one or more.', type:'card', multi:true,
     options:[
       {value:'Build muscle',    icon:'💪', label:'Build Muscle'},
       {value:'Get stronger',    icon:'🏋️', label:'Get Stronger'},
@@ -2821,7 +2821,7 @@ const OB_STEPS = [
 ];
 
 async function showOnboarding(){
-  _ob = { step:0, experience:null, equipment:null, goal:null, daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'', username:null };
+  _ob = { step:0, experience:null, equipment:null, goal:[], daysPerWeek:6, sessionDuration:60, programWeeks:8, injuries:[], otherInjury:'', username:null };
   // New users pick a handle first; existing users (e.g. "redo plan") keep theirs.
   _ob.username = _username || await promptUsername({ mode:'onboard' });
   document.getElementById('onboardingOverlay').style.display='flex';
@@ -2838,8 +2838,10 @@ function _renderObStep(){
   if(cfg.type==='card'){
     const cols = cfg.options.length<=3 ? 'ob-cards-3' : '';
     optHTML = `<div class="ob-cards ${cols}">`+cfg.options.map(o=>{
-      const sel = _ob[cfg.key]===o.value;
-      return `<button class="ob-card${sel?' selected':''}" onclick="obSelect('${cfg.key}','${o.value.replace(/'/g,'&#39;')}')">
+      const esc = o.value.replace(/'/g,'&#39;');
+      const sel = cfg.multi ? (_ob[cfg.key]||[]).includes(o.value) : _ob[cfg.key]===o.value;
+      const handler = cfg.multi ? `obToggleMulti('${cfg.key}','${esc}')` : `obSelect('${cfg.key}','${esc}')`;
+      return `<button class="ob-card${sel?' selected':''}" onclick="${handler}">
         <div class="ob-card-icon">${o.icon}</div>
         <div class="ob-card-label">${o.label}</div>
         ${o.desc?`<div class="ob-card-desc">${o.desc}</div>`:''}
@@ -2866,7 +2868,7 @@ function _renderObStep(){
   }
 
   const isLast = _ob.step===total-1;
-  const canNext = cfg.type==='check' || _ob[cfg.key]!==null;
+  const canNext = cfg.type==='check' || (cfg.multi ? (_ob[cfg.key]||[]).length>0 : _ob[cfg.key]!==null);
   const backBtn = _ob.step>0 ? `<button class="ob-btn-back" onclick="obBack()">← Back</button>` : '<div></div>';
 
   document.getElementById('onboardingOverlay').innerHTML = `
@@ -2887,6 +2889,12 @@ function _renderObStep(){
 
 function obSelect(key, val){
   _ob[key]=val;
+  _renderObStep();
+}
+
+function obToggleMulti(key, val){
+  if(!Array.isArray(_ob[key])) _ob[key] = [];
+  _ob[key] = _ob[key].includes(val) ? _ob[key].filter(v=>v!==val) : [..._ob[key], val];
   _renderObStep();
 }
 
@@ -2920,13 +2928,14 @@ async function obGenerate(){
     const { data:{ session } } = await _sb.auth.getSession();
     const baseInjuries = _ob.injuries.includes('None') ? [] : _ob.injuries.filter(i=>i!=='None');
     if(_ob.otherInjury.trim()) baseInjuries.push(_ob.otherInjury.trim());
+    const goalStr = Array.isArray(_ob.goal) ? _ob.goal.join(' + ') : (_ob.goal || '');
     const res = await fetch(EDGE_FN,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
       body: JSON.stringify({
         experience:      _ob.experience,
         equipment:       _ob.equipment,
-        goal:            _ob.goal,
+        goal:            goalStr,
         daysPerWeek:     _ob.daysPerWeek,
         sessionDuration: _ob.sessionDuration,
         injuries:        baseInjuries,
@@ -2940,7 +2949,7 @@ async function obGenerate(){
     const profileData = {
       user_id:_currentUser.id,
       experience:_ob.experience, equipment:_ob.equipment,
-      goal:_ob.goal, days_per_week:_ob.daysPerWeek,
+      goal:goalStr, days_per_week:_ob.daysPerWeek,
       injuries:baseInjuries, plan,
       program_weeks:_ob.programWeeks, program_start_date:today,
     };
@@ -2950,7 +2959,7 @@ async function obGenerate(){
       // Row exists — update it directly
       const updateData = {
         experience:_ob.experience, equipment:_ob.equipment,
-        goal:_ob.goal, days_per_week:_ob.daysPerWeek,
+        goal:goalStr, days_per_week:_ob.daysPerWeek,
         injuries:baseInjuries, plan,
         program_weeks:_ob.programWeeks, program_start_date:today,
       };
@@ -2964,7 +2973,7 @@ async function obGenerate(){
     await _finishSignIn(_currentUser, {
       days_per_week: _ob.daysPerWeek,
       equipment: _ob.equipment,
-      goal: _ob.goal,
+      goal: goalStr,
       program_weeks: _ob.programWeeks,
       program_start_date: today,
     });
