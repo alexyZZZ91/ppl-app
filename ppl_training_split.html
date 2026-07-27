@@ -2533,7 +2533,7 @@ async function doEmailAuth(){
   btn.disabled = true;
   const { error } = _authMode==='signin'
     ? await _sb.auth.signInWithPassword({ email, password:pass })
-    : await _sb.auth.signUp({ email, password:pass });
+    : await _sb.auth.signUp({ email, password:pass, options:{ emailRedirectTo: window.location.origin + window.location.pathname } });
   btn.disabled = false;
   if(error) setAuthMsg(error.message);
   else if(_authMode==='signup') setAuthMsg('Check your email to confirm your account.', true);
