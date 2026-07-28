@@ -691,13 +691,15 @@ body{
   gap:6px;
   margin-bottom:8px;
 }
+.set-actions{display:flex;gap:6px;margin-bottom:8px;}
 .add-set-btn{
-  width:100%;margin-bottom:8px;background:transparent;
+  flex:1;background:transparent;
   border:1px dashed var(--border2);border-radius:8px;
   color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.5px;
   padding:8px;cursor:pointer;transition:color .15s,border-color .15s;
 }
 .add-set-btn:hover{color:var(--accent);border-color:var(--accent);}
+.add-set-btn.remove:hover{color:var(--push);border-color:var(--push);}
 
 .set-row{
   display:flex;
@@ -2682,7 +2684,7 @@ function onSignedOut(){
   _username = null;
   _friendData = { friends:[], incoming:[], outgoing:[] };
   _sharedInbox = [];
-  _addedSets = {};
+  _setOverride = {};
   _isPublic = false;
   _boardMode = 'friends';
   appData = { checked:{}, sessions:{} };
@@ -3037,20 +3039,40 @@ function getLastSession(dayId, exIndex, exName){
   return null;
 }
 
-let _addedSets = {}; // in-session extra set rows per slot, key `e_${dayId}_${exIndex}`
+let _setOverride = {}; // explicit set-row count per slot once the user adds/removes sets
 
 function getTodaySets(dayId, exIndex){
   return appData.sessions[getToday()]?.[dayId]?.[exIndex] || null;
 }
 
-// Add one more set row to an exercise (beyond its planned/logged count).
-function addSet(dayId, exIndex){
-  const key = `e_${dayId}_${exIndex}`;
+function _plannedSets(dayId, exIndex){
   const day = DAYS.find(d=>d.id===dayId);
-  const planned = day ? (parseInt(day.exercises[exIndex]?.sets)||3) : 3;
+  return day ? (parseInt(day.exercises[exIndex]?.sets)||3) : 3;
+}
+
+// How many set rows to show: the user's override if they've adjusted it, else
+// the planned count grown to fit any sets already logged today.
+function effectiveSetCount(dayId, exIndex, planned){
+  const key = `e_${dayId}_${exIndex}`;
+  if(_setOverride[key] != null) return Math.max(1, _setOverride[key]);
   const todaySets = getTodaySets(dayId, exIndex) || [];
-  const current = Math.max(planned, todaySets.length, _addedSets[key]||0);
-  _addedSets[key] = current + 1;
+  return Math.max(planned != null ? planned : _plannedSets(dayId, exIndex), todaySets.length);
+}
+
+// Add one more set row.
+function addSet(dayId, exIndex){
+  _setOverride[`e_${dayId}_${exIndex}`] = effectiveSetCount(dayId, exIndex) + 1;
+  renderDay();
+}
+
+// Remove the last set row (keeps at least 1); drops that set's logged data.
+function removeSet(dayId, exIndex){
+  const cur = effectiveSetCount(dayId, exIndex);
+  if(cur <= 1) return;
+  const newCount = cur - 1;
+  const arr = appData.sessions[getToday()]?.[dayId]?.[exIndex];
+  if(Array.isArray(arr) && arr.length > newCount){ arr.length = newCount; saveData(appData); }
+  _setOverride[`e_${dayId}_${exIndex}`] = newCount;
   renderDay();
 }
 
@@ -4400,8 +4422,7 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName, exReps){
   const lastSess  = getLastSession(dayId, exIndex, exName);
   const dis = locked ? 'disabled' : '';
   // Effective rows = planned, but grow to fit logged sets or user-added extras.
-  const _slotKey = `e_${dayId}_${exIndex}`;
-  const setCount = Math.max(numSets, todaySets.length, _addedSets[_slotKey]||0);
+  const setCount = effectiveSetCount(dayId, exIndex, numSets);
 
   // Build suggested weights per set
   const suggestions = [];
@@ -4471,8 +4492,8 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName, exReps){
           onfocus="event.stopPropagation()">${todayNote}</textarea>
       </div>`;
 
-  const addSetHTML = locked ? '' : `<button class="add-set-btn" onclick="addSet(${dayId},${exIndex});event.stopPropagation()" title="Add a set">＋ Add set</button>`;
-  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()">${suggestTagHTML}<div class="set-rows">${rowsHTML}</div>${addSetHTML}${ormHTML}${lastHTML}${rpeHTML}${noteHTML}</div>`;
+  const setActionsHTML = locked ? '' : `<div class="set-actions">${setCount>1 ? `<button class="add-set-btn remove" onclick="removeSet(${dayId},${exIndex});event.stopPropagation()" title="Remove last set">－ Remove set</button>` : ''}<button class="add-set-btn" onclick="addSet(${dayId},${exIndex});event.stopPropagation()" title="Add a set">＋ Add set</button></div>`;
+  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()">${suggestTagHTML}<div class="set-rows">${rowsHTML}</div>${setActionsHTML}${ormHTML}${lastHTML}${rpeHTML}${noteHTML}</div>`;
 }
 
 function calcSuggestedWeight(lastSess, setIndex, exReps){
