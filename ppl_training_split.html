@@ -893,6 +893,21 @@ body{
 }
 .alt-item.holding{border-color:var(--accent2);color:var(--white);}
 .alt-item.holding::after{width:100%;transition:width 600ms linear;}
+.alt-custom{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.alt-custom-input{
+  flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border2);
+  border-radius:7px;color:var(--white);font-family:inherit;font-size:13px;
+  padding:8px 10px;outline:none;transition:border-color .15s;
+}
+.alt-custom-input:focus{border-color:var(--accent2);}
+.alt-custom-btn{
+  flex-shrink:0;background:transparent;border:1px solid var(--border2);border-radius:7px;
+  color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;
+  padding:0 12px;cursor:pointer;transition:color .15s,border-color .15s;
+}
+.alt-custom-btn:hover{color:var(--white);border-color:var(--white);}
+.alt-custom-btn.save{color:var(--accent2);border-color:rgba(74,240,184,.4);}
+.alt-custom-btn.save:hover{border-color:var(--accent2);}
 /* Toast */
 #appToast{
   position:fixed;bottom:110px;left:50%;
@@ -3486,6 +3501,15 @@ function selectAlt(dayId, exIndex, altName, event){
   renderDay();
 }
 
+// Custom swap — the user types their own exercise. save=true persists to plan.
+function applyCustomAlt(key, dayId, exIndex, save){
+  const inp = document.getElementById('altcustom-'+key);
+  const name = ((inp && inp.value) || '').trim();
+  if(!name) return;
+  if(save) saveAltToPlan(dayId, exIndex, name);
+  else     selectAlt(dayId, exIndex, name, { stopPropagation(){} });
+}
+
 // ── Hold-to-save alt ────────────────────────────────────────────────────────
 let _altPressTimer = null;
 let _altPressEl    = null;
@@ -5183,8 +5207,9 @@ function renderDay(){
     const altsBtn = (e.alts&&e.alts.length)
       ? `<button id="altsbtn-${key}" class="alts-btn" onclick="toggleAlts('${key}',event)">⇄ SWAP</button>`
       : '';
+    const altItems = (e.alts||[]).map(a=>`<div class="alt-item" onpointerdown="altPressStart(${d.id},${i},'${a.replace(/'/g,"&#39;")}',event)" onpointermove="altPressMove(event)" onpointerup="altPressEnd(event)" onpointercancel="altPressCancel(event)" oncontextmenu="event.preventDefault()">${a}</div>`).join('');
     const altsPanel = (e.alts&&e.alts.length)
-      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Machine busy? Choose an alternative</div><div class="alts-hint">Tap — swap today &nbsp;·&nbsp; Hold — save to plan</div>${e.alts.map(a=>`<div class="alt-item" onpointerdown="altPressStart(${d.id},${i},'${a.replace(/'/g,"&#39;")}',event)" onpointermove="altPressMove(event)" onpointerup="altPressEnd(event)" onpointercancel="altPressCancel(event)" oncontextmenu="event.preventDefault()">${a}</div>`).join('')}</div>`
+      ? `<div id="alts-${key}" class="alts-panel"><div class="alts-title">Machine busy? Choose an alternative</div><div class="alts-hint">Tap — swap today &nbsp;·&nbsp; Hold — save to plan</div>${altItems}<div class="alt-custom"><input id="altcustom-${key}" class="alt-custom-input" type="text" placeholder="Or type your own exercise…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();applyCustomAlt('${key}',${d.id},${i},false);}"><button class="alt-custom-btn" onclick="applyCustomAlt('${key}',${d.id},${i},false)">Today</button><button class="alt-custom-btn save" onclick="applyCustomAlt('${key}',${d.id},${i},true)">Save</button></div></div>`
       : '';
     return `
     <div class="ex-card ${done?'done':''}" style="--day-col:${d.col}">
