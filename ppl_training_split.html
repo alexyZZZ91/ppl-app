@@ -691,6 +691,13 @@ body{
   gap:6px;
   margin-bottom:8px;
 }
+.add-set-btn{
+  width:100%;margin-bottom:8px;background:transparent;
+  border:1px dashed var(--border2);border-radius:8px;
+  color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.5px;
+  padding:8px;cursor:pointer;transition:color .15s,border-color .15s;
+}
+.add-set-btn:hover{color:var(--accent);border-color:var(--accent);}
 
 .set-row{
   display:flex;
@@ -2675,6 +2682,7 @@ function onSignedOut(){
   _username = null;
   _friendData = { friends:[], incoming:[], outgoing:[] };
   _sharedInbox = [];
+  _addedSets = {};
   _isPublic = false;
   _boardMode = 'friends';
   appData = { checked:{}, sessions:{} };
@@ -3029,8 +3037,21 @@ function getLastSession(dayId, exIndex, exName){
   return null;
 }
 
+let _addedSets = {}; // in-session extra set rows per slot, key `e_${dayId}_${exIndex}`
+
 function getTodaySets(dayId, exIndex){
   return appData.sessions[getToday()]?.[dayId]?.[exIndex] || null;
+}
+
+// Add one more set row to an exercise (beyond its planned/logged count).
+function addSet(dayId, exIndex){
+  const key = `e_${dayId}_${exIndex}`;
+  const day = DAYS.find(d=>d.id===dayId);
+  const planned = day ? (parseInt(day.exercises[exIndex]?.sets)||3) : 3;
+  const todaySets = getTodaySets(dayId, exIndex) || [];
+  const current = Math.max(planned, todaySets.length, _addedSets[key]||0);
+  _addedSets[key] = current + 1;
+  renderDay();
 }
 
 function logSet(dayId, exIndex, setIndex, wt, reps, exName){
@@ -4378,11 +4399,14 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName, exReps){
   const todayNote = appData.sessions[getToday()]?.[dayId]?.[`note_${exIndex}`] ?? '';
   const lastSess  = getLastSession(dayId, exIndex, exName);
   const dis = locked ? 'disabled' : '';
+  // Effective rows = planned, but grow to fit logged sets or user-added extras.
+  const _slotKey = `e_${dayId}_${exIndex}`;
+  const setCount = Math.max(numSets, todaySets.length, _addedSets[_slotKey]||0);
 
   // Build suggested weights per set
   const suggestions = [];
   let hasSuggestions = false;
-  for(let s=0; s<numSets; s++){
+  for(let s=0; s<setCount; s++){
     const sw = (!locked && !todaySets[s]?.wt) ? calcSuggestedWeight(lastSess, s, exReps) : null;
     suggestions.push(sw);
     if(sw !== null) hasSuggestions = true;
@@ -4391,7 +4415,7 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName, exReps){
     ? `<div class="suggest-tag">💡 suggested from last session</div>` : '';
 
   let rowsHTML = '';
-  for(let s=0; s<numSets; s++){
+  for(let s=0; s<setCount; s++){
     const wt   = todaySets[s]?.wt   ?? '';
     const reps = todaySets[s]?.reps ?? '';
     const wtPlaceholder = suggestions[s] !== null ? suggestions[s] : '—';
@@ -4447,7 +4471,8 @@ function buildSetLogger(dayId, exIndex, numSets, locked, exName, exReps){
           onfocus="event.stopPropagation()">${todayNote}</textarea>
       </div>`;
 
-  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()">${suggestTagHTML}<div class="set-rows">${rowsHTML}</div>${ormHTML}${lastHTML}${rpeHTML}${noteHTML}</div>`;
+  const addSetHTML = locked ? '' : `<button class="add-set-btn" onclick="addSet(${dayId},${exIndex});event.stopPropagation()" title="Add a set">＋ Add set</button>`;
+  return `<div class="set-logger${locked?' locked-logger':''}" onclick="event.stopPropagation()">${suggestTagHTML}<div class="set-rows">${rowsHTML}</div>${addSetHTML}${ormHTML}${lastHTML}${rpeHTML}${noteHTML}</div>`;
 }
 
 function calcSuggestedWeight(lastSess, setIndex, exReps){
