@@ -3716,9 +3716,7 @@ async function togglePublic(){
 
 /* ── LEADERBOARD UI ── */
 async function switchBoard(){
-  activeView='board';
-  _showView('boardContent');
-  renderTabs();
+  showView('board');
   document.getElementById('boardContent').innerHTML = '<div class="lb-wrap"><div class="fr-searching">Loading…</div></div>';
   await Promise.all([ syncUserStats(), (_friendData.friends.length ? Promise.resolve() : loadFriendData()) ]);
   if(activeView!=='board') return;
@@ -4104,44 +4102,56 @@ function renderTabs(){
   document.getElementById('dayStrip').innerHTML = weekBtns + friendsBtn + boardBtn + histBtn;
 }
 
-function _showView(containerId){
-  ['mainContent','histContent','friendsContent','boardContent'].forEach(c=>{
-    const el = document.getElementById(c);
-    if(el) el.style.display = (c===containerId) ? '' : 'none';
+// ── View navigation ─────────────────────────────────────────────────────────
+// Single source of truth for the main content views: view name → its container.
+// Every switch goes through showView(), so a container is never left visible and
+// the tab bar is always refreshed. Adding a view = one entry here + a container
+// div + a tab in renderTabs(). (syncActiveDayToToday sets the initial activeView
+// directly during sign-in, before the first render — that's the one exception.)
+const VIEWS = {
+  day:     { el: 'mainContent'    },
+  rest:    { el: 'mainContent'    },
+  hist:    { el: 'histContent'    },
+  friends: { el: 'friendsContent' },
+  board:   { el: 'boardContent'   },
+};
+const _VIEW_CONTAINERS = [...new Set(Object.values(VIEWS).map(v => v.el))];
+
+// Make `name` the active view: record it, show only its container, refresh tabs.
+function showView(name){
+  activeView = name;
+  const target = (VIEWS[name] || VIEWS.day).el;
+  _VIEW_CONTAINERS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = (id === target) ? '' : 'none';
   });
+  renderTabs();
 }
 
 function switchDay(id){
-  activeView='day'; activeDay=id;
-  _showView('mainContent');
-  renderTabs(); renderDay();
-  document.getElementById('mainContent').scrollTop=0;
+  activeDay = id;
+  showView('day'); renderDay();
+  document.getElementById('mainContent').scrollTop = 0;
 }
 
 function switchHist(){
-  activeView='hist';
-  _showView('histContent');
-  renderTabs(); renderHist();
-  document.getElementById('histContent').scrollTop=0;
+  showView('hist'); renderHist();
+  document.getElementById('histContent').scrollTop = 0;
 }
 
 function switchRest(){
-  activeView='rest';
-  _showView('mainContent');
-  renderTabs(); renderRest();
-  document.getElementById('mainContent').scrollTop=0;
+  showView('rest'); renderRest();
+  document.getElementById('mainContent').scrollTop = 0;
 }
 
 async function switchFriends(){
-  activeView='friends';
-  _showView('friendsContent');
-  renderTabs();
+  showView('friends');
   document.getElementById('friendsContent').innerHTML = '<div class="fr-wrap"><div class="fr-searching">Loading…</div></div>';
   await Promise.all([loadFriendData(), loadSharedPrograms()]);
   if(activeView!=='friends') return; // navigated away while loading
   renderTabs(); // refresh request badge
   renderFriends();
-  document.getElementById('friendsContent').scrollTop=0;
+  document.getElementById('friendsContent').scrollTop = 0;
 }
 
 /* ── FRIENDS DATA (Phase 1) ── */
